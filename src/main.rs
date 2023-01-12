@@ -5,26 +5,38 @@ use winit::{
     window::WindowBuilder,
 };
 
-fn draw_plane(width: u32, height: u32, graphics_context: &mut GraphicsContext) {
-    let buffer = (0..((width * height) as usize))
-        .map(|index| {
-            let y = index / (width as usize);
-            let x = index % (width as usize);
+struct Graph {
+    width: u32,
+    height: u32,
+    buffer: Vec<u32>
+}
 
-            let black = 0x00 as u32;
-            let white = 0xFFFFFF as u32;
+impl Graph {
+    fn draw_plane(&mut self, gc: &mut GraphicsContext) {
+        let buffer = (0..((self.width * self.height) as usize))
+            .map(|index| {
+                let y = index / (self.width as usize);
+                let x = index % (self.width as usize);
 
-            if x > ((width as usize) / 2) - 2 && x < ((width as usize) / 2) + 2 {
-                black
-            } else if y > ((height as usize) / 2) - 2 && y < ((height as usize) / 2) + 2 {
-                black
-            } else {
-                white
-            }
-        })
-        .collect::<Vec<_>>();
+                let black = 0x00 as u32;
+                let white = 0xFFFFFF as u32;
+                let grey = 0xD0D0D0 as u32;
 
-    graphics_context.set_buffer(&buffer, width as u16, height as u16);
+                if x > ((self.width as usize) / 2) - 2 && x < ((self.width as usize) / 2) + 2 {
+                    black
+                } else if y > ((self.height as usize) / 2) - 2 && y < ((self.height as usize) / 2) + 2 {
+                    black
+                } else if x % (self.width as usize/10) == 0 || y % (self.height as usize/10) == 0 {
+                    grey
+                } else {
+                    white
+                }
+            })
+            .collect::<Vec<_>>();
+
+        gc.set_buffer(&buffer, self.width as u16, self.height as u16);
+        self.buffer = buffer;
+    }
 }
 
 fn _tst_color_bits(r: u8, g: u8, b: u8) {
@@ -44,17 +56,22 @@ fn main() {
         .unwrap();
     //window.with_window_icon("Make_an_icon");
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
+    let mut canvas = Graph {
+        width: 0,
+        height: 0,
+        buffer: Vec::new()
+    };
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
         match event {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                let (width, height) = {
-                    let size = window.inner_size();
-                    (size.width, size.height)
-                };
-                draw_plane(width, height, &mut graphics_context);
+                let size = window.inner_size();
+                canvas.width = size.width;
+                canvas.height = size.height;
+
+                canvas.draw_plane(&mut graphics_context);
             }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
@@ -69,19 +86,19 @@ fn main() {
                 ..
             } => {
                 println!("INPT\tMotion: {:?}", delta);
-            },
+            }
             Event::DeviceEvent {
                 event: DeviceEvent::MouseWheel { delta },
                 ..
             } => {
                 println!("INPT\tScroll: {:?}", delta);
-            },
+            }
             Event::DeviceEvent {
                 event: DeviceEvent::Button { button, state },
                 ..
             } => {
                 println!("BTN\t {:?}, {:?}", button, state);
-            },
+            }
             _ => {}
         }
     });
