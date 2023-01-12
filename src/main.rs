@@ -8,7 +8,7 @@ use winit::{
 struct Graph {
     width: u32,
     height: u32,
-    buffer: Vec<u32>
+    buffer: Vec<u32>,
 }
 
 impl Graph {
@@ -18,16 +18,15 @@ impl Graph {
                 let y = index / (self.width as usize);
                 let x = index % (self.width as usize);
 
-                let black = 0x00 as u32;
-                let white = 0xFFFFFF as u32;
-                let grey = 0xD0D0D0 as u32;
+                let black = 0x00;
+                let white = 0xFFFFFF;
+                let grey = 0xD0D0D0;
 
-                if x > ((self.width as usize) / 2) - 2 && x < ((self.width as usize) / 2) + 2 {
+                if x > ((self.width as usize) / 2) - 2 && x < (self.width as usize / 2) + 2 {
                     black
-                } else if y > ((self.height as usize) / 2) - 2 && y < ((self.height as usize) / 2) + 2 {
+                } else if y > (self.height as usize / 2) - 2 && y < (self.height as usize / 2) + 2
+                {
                     black
-                } else if x % (self.width as usize/10) == 0 || y % (self.height as usize/10) == 0 {
-                    grey
                 } else {
                     white
                 }
@@ -59,7 +58,7 @@ fn main() {
     let mut canvas = Graph {
         width: 0,
         height: 0,
-        buffer: Vec::new()
+        buffer: Vec::new(),
     };
 
     event_loop.run(move |event, _, control_flow| {
