@@ -1,6 +1,6 @@
 use softbuffer::GraphicsContext;
 use winit::{
-    event::{Event, WindowEvent},
+    event::{DeviceEvent, Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
@@ -14,13 +14,9 @@ fn draw_plane(width: u32, height: u32, graphics_context: &mut GraphicsContext) {
             let black = 0x00 as u32;
             let white = 0xFFFFFF as u32;
 
-            if x > ((width as usize) / 2) - 2
-                && x < ((width as usize) / 2) + 2
-            {
+            if x > ((width as usize) / 2) - 2 && x < ((width as usize) / 2) + 2 {
                 black
-            } else if y > ((height as usize) / 2) - 2
-                && y < ((height as usize) / 2) + 2
-            {
+            } else if y > ((height as usize) / 2) - 2 && y < ((height as usize) / 2) + 2 {
                 black
             } else {
                 white
@@ -67,6 +63,25 @@ fn main() {
                 *control_flow = ControlFlow::Exit;
             }
             Event::MainEventsCleared => {}
+
+            Event::DeviceEvent {
+                event: DeviceEvent::MouseMotion { delta },
+                ..
+            } => {
+                println!("INPT\tMotion: {:?}", delta);
+            },
+            Event::DeviceEvent {
+                event: DeviceEvent::MouseWheel { delta },
+                ..
+            } => {
+                println!("INPT\tScroll: {:?}", delta);
+            },
+            Event::DeviceEvent {
+                event: DeviceEvent::Button { button, state },
+                ..
+            } => {
+                println!("BTN\t {:?}, {:?}", button, state);
+            },
             _ => {}
         }
     });
