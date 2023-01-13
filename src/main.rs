@@ -27,10 +27,9 @@ fn main() {
 
         match event {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                let size = window.inner_size();
-                canvas.set_size(size);
+                canvas.set_size(window.inner_size());
                 canvas.whiteboard();
-                canvas.main_axis();
+                canvas.axis();
                 graphics_context.set_buffer(&canvas.buffer, canvas.width as u16, canvas.height as u16);
             }
             Event::WindowEvent {
