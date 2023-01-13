@@ -29,25 +29,17 @@ impl Graph {
     }
 
     pub fn axis(&mut self) {
-        for i in 1..self.width {
-            let index = (self.width * self.height) / 2;
+        let half_total_width = (self.width * self.height) / 2;
+        let half_width = self.width / 2;
 
+        for i in 1..self.width {
             drop(std::mem::replace(
-                &mut self.buffer[(index + i as u32) as usize],
-                0xFFFFFF as u32,
-            ));
-            drop(std::mem::replace(
-                &mut self.buffer[(index + self.width + i as u32) as usize],
+                &mut self.buffer[(half_total_width + i as u32) as usize],
                 0xFFFFFF as u32,
             ));
         }
 
         for i in 0..self.height {
-            let half_width = self.width / 2;
-            drop(std::mem::replace(
-                &mut self.buffer[(self.width * i + half_width) as usize],
-                0xFFFFFF as u32,
-            ));
             drop(std::mem::replace(
                 &mut self.buffer[(self.width * i + half_width + 1) as usize],
                 0xFFFFFF as u32,

@@ -27,25 +27,27 @@ fn main() {
 
         match event {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                canvas.set_size(window.inner_size());
-                canvas.whiteboard();
                 canvas.axis();
-                graphics_context.set_buffer(&canvas.buffer, canvas.width as u16, canvas.height as u16);
+                graphics_context.set_buffer(
+                    &canvas.buffer,
+                    canvas.width as u16,
+                    canvas.height as u16,
+                );
             }
+
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 window_id,
             } if window_id == window.id() => {
                 *control_flow = ControlFlow::Exit;
             }
-            Event::MainEventsCleared => {
 
-            }
+            Event::MainEventsCleared => {}
             Event::DeviceEvent {
                 event: DeviceEvent::MouseWheel { .. },
                 ..
-            } => {
-            }
+            } => {}
+
             Event::WindowEvent {
                 event: WindowEvent::MouseInput { state, button, .. },
                 ..
@@ -57,17 +59,30 @@ fn main() {
                     is_pressed = false;
                 }
             }
+
             Event::WindowEvent {
                 event: WindowEvent::CursorMoved { position, .. },
                 ..
             } => {
-                if is_pressed_first && is_pressed{
-                    canvas.offset.prepare_movement(position.x as u32, position.y as u32);
+                if is_pressed_first && is_pressed {
+                    canvas
+                        .offset
+                        .prepare_movement(position.x as u32, position.y as u32);
                     is_pressed_first = false;
                 } else if is_pressed {
-                    canvas.offset.diff_drag_to_offset(position.x as i32, position.y as i32);
+                    canvas
+                        .offset
+                        .diff_drag_to_offset(position.x as i32, position.y as i32);
                     window.request_redraw();
                 }
+            }
+
+            Event::WindowEvent {
+                event: WindowEvent::Resized(..),
+                    ..
+            } => {
+                canvas.set_size(window.inner_size());
+                canvas.whiteboard();
             }
             _ => {}
         }
