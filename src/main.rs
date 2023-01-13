@@ -18,6 +18,7 @@ fn main() {
     //window.with_window_icon("Make_an_icon");
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
     let mut canvas = Graph::new();
+
     let mut is_pressed_first: bool = false;
     let mut is_pressed = false;
 
@@ -28,7 +29,8 @@ fn main() {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 let size = window.inner_size();
                 canvas.set_size(size);
-                canvas.draw_plane(&mut graphics_context);
+                canvas.init_grid();
+                canvas.draw(&mut graphics_context);
             }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
@@ -38,21 +40,18 @@ fn main() {
             }
             Event::MainEventsCleared => {}
             Event::DeviceEvent {
-                event: DeviceEvent::MouseWheel { delta },
+                event: DeviceEvent::MouseWheel { .. },
                 ..
             } => {
-                println!("INPT-Scroll\tdelta:{:?}", delta);
             }
             Event::WindowEvent {
                 event: WindowEvent::MouseInput { state, button, .. },
                 ..
             } => {
                 if state == ElementState::Pressed && button == MouseButton::Left {
-                    println!("Pressed_first");
                     is_pressed = true;
                     is_pressed_first = true;
                 } else {
-                    println!("Released");
                     is_pressed = false;
                 }
             }
@@ -60,12 +59,11 @@ fn main() {
                 event: WindowEvent::CursorMoved { position, .. },
                 ..
             } => {
-                //println!("INPT\tWindow-Mouse\tposition:{:?}", position);
                 if is_pressed_first && is_pressed{
-                    canvas.prepare_movement(position.x as u32, position.y as u32);
+                    canvas.offset.prepare_movement(position.x as u32, position.y as u32);
                     is_pressed_first = false;
                 } else if is_pressed {
-                    canvas.set_offsets(position.x as i32, position.y as i32);
+                    canvas.offset.diff_drag_to_offset(position.x as i32, position.y as i32);
                     window.request_redraw();
                 }
             }
