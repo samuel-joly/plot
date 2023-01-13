@@ -29,8 +29,9 @@ fn main() {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 let size = window.inner_size();
                 canvas.set_size(size);
-                canvas.init_grid();
-                canvas.draw(&mut graphics_context);
+                canvas.whiteboard();
+                canvas.main_axis();
+                graphics_context.set_buffer(&canvas.buffer, canvas.width as u16, canvas.height as u16);
             }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
@@ -38,7 +39,9 @@ fn main() {
             } if window_id == window.id() => {
                 *control_flow = ControlFlow::Exit;
             }
-            Event::MainEventsCleared => {}
+            Event::MainEventsCleared => {
+
+            }
             Event::DeviceEvent {
                 event: DeviceEvent::MouseWheel { .. },
                 ..

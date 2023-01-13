@@ -6,10 +6,10 @@ use offset::Offset;
 
 #[derive(Debug)]
 pub struct Graph {
-    width: u32,
-    height: u32,
-    buffer: Vec<u32>,
-    pub offset: Offset
+   pub width: u32,
+   pub height: u32,
+   pub buffer: Vec<u32>,
+   pub offset: Offset
 }
 
 impl Graph {
@@ -22,31 +22,23 @@ impl Graph {
         }
     }
 
-    pub fn draw(&mut self, gc: &mut GraphicsContext) {
-        gc.set_buffer(&self.buffer, self.width as u16, self.height as u16);
+
+    pub fn whiteboard(&mut self) {
+        self.buffer = (0..((self.width * self.height) as usize))
+            .map(|_| { 0xFFFFFF }).collect::<Vec<_>>();
     }
 
-    pub fn init_grid(&mut self) {
-        self.buffer = (0..((self.width * self.height) as usize))
-            .map(|index| {
-                let (y, x) = self.get_pos(index);
-
-                let width = (self.width as i32 - self.offset.x) as usize;
-                let height = (self.height as i32 - self.offset.y) as usize;
-
-                let black = 0x00;
-                let white = 0xFFFFFF;
-
-                // Draw center lines
-                if x > (width/ 2) - 2 && x < (width/ 2) + 2 {
-                    black
-                } else if y > (height/ 2) - 2 && y < (height/ 2) + 2 {
-                    black
-                } else {
-                    white
-                }
-            })
-            .collect::<Vec<_>>();
+    pub fn main_axis(&mut self) {
+        for i in 0..self.width {
+            let index = (self.width*self.height)/2;
+            drop(std::mem::replace(&mut self.buffer[(index+i as u32) as usize], 0x00 as u32));
+            drop(std::mem::replace(&mut self.buffer[((index+self.width)+i as u32) as usize], 0x00 as u32));
+        }
+        for i in 0..self.height*2 {
+            let index = self.width/2;
+            drop(std::mem::replace(&mut self.buffer[(index*i as u32) as usize], 0x00 as u32));
+            drop(std::mem::replace(&mut self.buffer[((index*i as u32)+1) as usize], 0x00 as u32));
+        }
     }
 
     fn get_pos(&self, index: usize) -> (usize, usize) {
