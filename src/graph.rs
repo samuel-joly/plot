@@ -10,6 +10,8 @@ pub struct Graph {
     offset_y: i32,
     offset_start_x: u32,
     offset_start_y: u32,
+    old_offset_x: i32,
+    old_offset_y:i32,
 }
 
 impl Graph {
@@ -22,6 +24,8 @@ impl Graph {
             offset_y: 0,
             offset_start_x: 0,
             offset_start_y: 0,
+            old_offset_x:0,
+            old_offset_y:0,
         }
     }
 
@@ -60,13 +64,24 @@ impl Graph {
         self.height = size.height;
     }
 
-    pub fn set_offset_start(&mut self ,x: u32, y:u32) {
+    pub fn prepare_movement(&mut self, x:u32, y:u32) {
+        self.set_offset_start(x,y);
+        self.set_old_offsets();
+    }
+
+    fn set_offset_start(&mut self ,x: u32, y:u32) {
         self.offset_start_x = x;
         self.offset_start_y = y;
     }
 
-    pub fn set_offsets(&mut self ,x: i32, y:i32) {
-        self.offset_x = self.offset_start_x as i32 - x ;
-        self.offset_y = self.offset_start_y as i32 - y ;
+    fn set_old_offsets(&mut self) {
+        self.old_offset_x = self.offset_x;
+        self.old_offset_y = self.offset_y;
     }
+
+    pub fn move_graph_to(&mut self ,x: i32, y:i32) {
+        self.offset_x = (self.offset_start_x as i32 - x) + self.old_offset_x ;
+        self.offset_y = (self.offset_start_y as i32 - y) + self.old_offset_y ;
+    }
+
 }

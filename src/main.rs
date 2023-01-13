@@ -62,8 +62,7 @@ fn main() {
             } => {
                 //println!("INPT\tWindow-Mouse\tposition:{:?}", position);
                 if is_pressed_first && is_pressed{
-                    println!("Dragging from {}\t{}", position.x, position.y);
-                    canvas.set_offset_start(position.x as u32, position.y as u32);
+                    canvas.prepare_movement(position.x as u32, position.y as u32);
                     is_pressed_first = false;
                 } else if is_pressed {
                     canvas.set_offsets(position.x as i32, position.y as i32);
