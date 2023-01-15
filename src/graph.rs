@@ -1,6 +1,7 @@
-use softbuffer::GraphicsContext;
 use winit::dpi::PhysicalSize;
 mod offset;
+mod line;
+mod graphPosition;
 
 use offset::Offset;
 
@@ -10,6 +11,8 @@ pub struct Graph {
     pub height: u32,
     pub buffer: Vec<u32>,
     pub offset: Offset,
+    pub x_axis: Line,
+    pub y_axis: Line,
 }
 
 impl Graph {
@@ -29,19 +32,20 @@ impl Graph {
     }
 
     pub fn axis(&mut self) {
-        let half_total_width = (self.width * self.height) / 2;
-        let half_width = self.width / 2;
-
-        for i in 1..self.width {
+        let half_size = (self.width * self.height) / 2;
+        for i_column in 1..self.width {
+            let next_index = ((half_size + i_column as u32) as i32) as usize;
             drop(std::mem::replace(
-                &mut self.buffer[(half_total_width + i as u32) as usize],
+                &mut self.buffer[next_index],
                 0xFFFFFF as u32,
             ));
         }
 
-        for i in 0..self.height {
+        let half_width = self.width / 2;
+        for i_row in 0..self.height {
+            let next_index = ((self.width * i_row) + half_width) as usize;
             drop(std::mem::replace(
-                &mut self.buffer[(self.width * i + half_width + 1) as usize],
+                &mut self.buffer[next_index],
                 0xFFFFFF as u32,
             ));
         }
