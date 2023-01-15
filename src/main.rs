@@ -26,8 +26,16 @@ fn main() {
         *control_flow = ControlFlow::Wait;
 
         match event {
+            Event::WindowEvent {
+                event: WindowEvent::Resized(..),
+                    ..
+            } => {
+                canvas.set_size(window.inner_size());
+                canvas.init_buffer();
+                canvas.draw_line();
+            }
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                canvas.axis();
+                canvas.draw();
                 graphics_context.set_buffer(
                     &canvas.buffer,
                     canvas.width as u16,
@@ -77,13 +85,6 @@ fn main() {
                 }
             }
 
-            Event::WindowEvent {
-                event: WindowEvent::Resized(..),
-                    ..
-            } => {
-                canvas.set_size(window.inner_size());
-                canvas.whiteboard();
-            }
             _ => {}
         }
     });
