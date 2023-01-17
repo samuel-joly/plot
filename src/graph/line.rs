@@ -22,7 +22,7 @@ impl Line {
         }
     }
 
-    pub fn new() -> Line {
+    pub fn _new() -> Line {
         Line {
             from: (0,0),
             to: (0,0),

@@ -8,7 +8,7 @@ pub struct Coordinate {
 }
 
 impl Coordinate {
-    pub fn new() -> Coordinate {
+    pub fn _new() -> Coordinate {
         Coordinate {
             euclidian: (0, 0),
             index: 0,
@@ -26,23 +26,40 @@ impl Coordinate {
     pub fn from_pos(graph: &Graph, pos: (i32, i32)) -> Result<Coordinate, Error> {
         if pos.0 >= graph.width as i32 / 2 || pos.0 <= -(graph.width as i32 / 2) {
             panic!(
-                "X coordinate should be less than {} and more than {}",
+                "X coordinate should be less than {} and more than {}, {} given",
                 graph.width / 2,
-                -(graph.width as i32 / 2)
+                -(graph.width as i32 / 2),
+                pos.0
             );
         }
 
         if pos.1 >= graph.height as i32 / 2 || pos.1 <= -(graph.height as i32 / 2) {
             panic!(
-                "Y coordinate should be less than {} and more than {}",
+                "Y coordinate should be less than {} and more than {}, {} given",
                 graph.height / 2,
-                -(graph.height as i32 / 2)
+                -(graph.height as i32 / 2),
+                pos.1
             );
         }
 
         let index = ((graph.width / 2) as i32 + pos.0)
-            + (graph.width/2 * graph.height/2) as i32
-            + (graph.width as i32 * pos.1);
+            + (((graph.width * graph.height) / 2) as i32)
+            - graph.width as i32 * pos.1;
+
+//        dbg!(
+//            (graph.width / 2) as i32 + pos.0,
+//            ((graph.width * graph.height) / 2) as i32,
+//            graph.width as i32 * pos.1,
+//            (((graph.width * graph.height) / 2) as i32) + (graph.width as i32 * pos.1),
+//            graph.width,
+//            graph.height,
+//            graph.width * graph.height
+//        );
+//
+//        println!(
+//            "Printing point at ({},{}) for index {}",
+//            pos.0, pos.1, index
+//        );
 
         Ok(Coordinate {
             euclidian: pos,
@@ -50,7 +67,7 @@ impl Coordinate {
         })
     }
 
-    pub fn from_index(graph: &Graph, index: u32) -> Result<Coordinate, Error> {
+    pub fn _from_index(graph: &Graph, index: u32) -> Result<Coordinate, Error> {
         if index >= (graph.width * graph.height) {
             panic!(
                 "Index should not be more than {} and less than 0",

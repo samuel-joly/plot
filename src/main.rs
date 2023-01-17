@@ -1,4 +1,5 @@
 mod graph;
+use crate::graph::line::Line;
 
 use softbuffer::GraphicsContext;
 use winit::{
@@ -21,6 +22,7 @@ fn main() {
 
     let mut is_pressed_first: bool = false;
     let mut is_pressed = false;
+    let mut is_sized = false;
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -31,16 +33,24 @@ fn main() {
                     ..
             } => {
                 canvas.set_size(window.inner_size());
+                if window.inner_size().width > 0 {
+                    is_sized = true;
+                }
                 canvas.init_buffer();
-                canvas.draw_line();
             }
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                canvas.draw();
-                graphics_context.set_buffer(
-                    &canvas.buffer,
-                    canvas.width as u16,
-                    canvas.height as u16,
-                );
+                if is_sized {
+                    canvas.draw();
+                    let line_r = Line::from((-100,-100),(100,100)  , 0x00CC00 as u32);
+                    let line_l = Line::from((50,70),(156,-223)  , 0x00CC00 as u32);
+                    canvas.draw_line(&line_r);
+                    canvas.draw_line(&line_l);
+                    graphics_context.set_buffer(
+                        &canvas.buffer,
+                        canvas.width as u16,
+                        canvas.height as u16,
+                    );
+                }
             }
 
             Event::WindowEvent {

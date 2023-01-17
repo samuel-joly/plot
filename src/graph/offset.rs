@@ -45,7 +45,7 @@ impl Offset {
         self.set_cumul();
     }
 
-    pub fn reset_cumul(&mut self) {
+    pub fn _reset_cumul(&mut self) {
         self.cumul_x = 0;
         self.cumul_y = 0;
     }
