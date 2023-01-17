@@ -32,53 +32,27 @@ impl Graph {
             .collect::<Vec<_>>();
     }
 
-    pub fn draw_line(&mut self, line: &Line) {
+    pub fn draw_line(&mut self, line: &mut Line) {
         let coord_start = Coordinate::from_pos(&self, line.from).unwrap();
         let coord_end = Coordinate::from_pos(&self, line.to).unwrap();
 
-        let (line_width, line_height) = {
-            let coord = Coordinate::substr(&self, &coord_start, &coord_end);
-            (coord.get_pos().0, coord.get_pos().1)
-        };
-
-        let u_line_width = line_width.abs();
-        let u_line_height = line_height.abs();
-
-        let mut increment: i32;
-        let increment_rest: i32;
-        let equalizer: f64;
-        let mut no_equalize: bool = false;
-        if line_width >= line_height {
-            increment = u_line_width / u_line_height;
-            increment_rest = u_line_width % u_line_height;
-            if increment_rest != 0 {
-                equalizer = (u_line_width / increment_rest) as f64;
-            } else {
-                equalizer = 0.0;
-                no_equalize = true;
-            }
-        } else {
-            increment = u_line_height / u_line_width;
-            increment_rest = u_line_height % u_line_width;
-            if increment_rest != 0 {
-                equalizer = (u_line_height / increment_rest) as f64;
-            } else {
-                equalizer = 0.0;
-                no_equalize = true;
-            }
-        }
+        let dimension = line.dimension(&self);
+        line.is_dimension_even(&self);
 
         let mut equalize: bool = false;
         let mut new_start_x: i32;
         let mut new_start_y: i32;
+        let pos_line_width = dimension.0.abs();
 
         new_start_x = coord_start.get_pos().0;
         new_start_y = coord_start.get_pos().1;
 
-        for i in 0..u_line_width {
-            if !no_equalize && 0 == (i - 1) % equalizer as i32 {
+//        dbg!(line.increment, line.increment_rest, line.equalizer );
+
+        for i in 0..pos_line_width {
+            if line.equalizer != 0 && 0 == (i+1) % line.equalizer as i32 {
                 equalize = true;
-                increment += 1;
+                line.increment += 1;
             }
 
             if new_start_x < coord_end.get_pos().0 {
@@ -86,19 +60,22 @@ impl Graph {
             } else {
                 new_start_x -= 1
             };
-            if new_start_y < coord_end.get_pos().1 {
-                new_start_y += increment;
-            } else {
-                new_start_y -= increment;
-            };
 
-            let new_coordinate = Coordinate::from_pos(&self, (new_start_x, new_start_y)).unwrap();
-            drop(std::mem::replace(
-                &mut self.buffer[new_coordinate.get_index() as usize],
-                line.color,
-            ));
+            for _ in 0..line.increment {
+                if new_start_y < coord_end.get_pos().1 {
+                    new_start_y += 1;
+                } else {
+                    new_start_y -= 1;
+                };
+
+                let new_coordinate = Coordinate::from_pos(&self, (new_start_x, new_start_y)).unwrap();
+                drop(std::mem::replace(
+                    &mut self.buffer[new_coordinate.get_index() as usize],
+                    line.color,
+                ));
+            }
             if equalize {
-                increment -= 1;
+                line.increment -= 1;
                 equalize = false;
             }
         }

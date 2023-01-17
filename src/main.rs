@@ -41,10 +41,10 @@ fn main() {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 if is_sized {
                     canvas.draw();
-                    let line_r = Line::from((-100,-100),(100,100)  , 0x00CC00 as u32);
-                    let line_l = Line::from((50,70),(156,-223)  , 0x00CC00 as u32);
-                    canvas.draw_line(&line_r);
-                    canvas.draw_line(&line_l);
+                    let mut line_r = Line::from((-100,-100),(100,100)  , 0x00CC00 as u32);
+                    let mut line_l = Line::from((100,100),(156,-223)  , 0xCCCC00 as u32);
+                    canvas.draw_line(&mut line_r);
+                    canvas.draw_line(&mut line_l);
                     graphics_context.set_buffer(
                         &canvas.buffer,
                         canvas.width as u16,
