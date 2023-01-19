@@ -22,7 +22,6 @@ fn main() {
 
     let mut is_pressed_first: bool = false;
     let mut is_pressed = false;
-    let mut is_sized = false;
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -30,27 +29,28 @@ fn main() {
         match event {
             Event::WindowEvent {
                 event: WindowEvent::Resized(..),
-                    ..
+                ..
             } => {
                 canvas.set_size(window.inner_size());
-                if window.inner_size().width > 0 {
-                    is_sized = true;
-                }
                 canvas.init_buffer();
             }
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                if is_sized {
-                    canvas.draw();
-                    let mut line_r = Line::from((-100,-100),(100,100)  , 0x00CC00 as u32);
-                    let mut line_l = Line::from((100,100),(156,-223)  , 0xCCCC00 as u32);
-                    canvas.draw_line(&mut line_r);
-                    canvas.draw_line(&mut line_l);
-                    graphics_context.set_buffer(
-                        &canvas.buffer,
-                        canvas.width as u16,
-                        canvas.height as u16,
-                    );
-                }
+                canvas.draw_axis();
+                let mut line_c = Line::from((-100, -100), (100, 100), 0x00CC00 as u32);
+                let mut line_ctr = Line::from((0, 0), (200, 300), 0xCCCC00 as u32);
+                let mut line_ctl = Line::from((0, 0), (-250, 300), 0xCCCC00 as u32);
+//                let mut line_cbr = Line::from((0, 0), (-656, -423), 0xCCCC00 as u32);
+//                let mut line_cbl = Line::from((0, 0), (656, -423), 0xCCCC00 as u32);
+                canvas.draw_line(&mut line_ctr);
+                canvas.draw_line(&mut line_ctl);
+ //               canvas.draw_line(&mut line_cbr);
+ //               canvas.draw_line(&mut line_cbl);
+                canvas.draw_line(&mut line_c);
+                graphics_context.set_buffer(
+                    &canvas.buffer,
+                    canvas.width as u16,
+                    canvas.height as u16,
+                );
             }
 
             Event::WindowEvent {

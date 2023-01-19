@@ -3,43 +3,34 @@ use std::io::Error;
 
 #[derive(Debug)]
 pub struct Coordinate {
-    euclidian: (i32, i32),
+    cartesian: (i32, i32),
     index: u32,
 }
 
 impl Coordinate {
-    pub fn _new() -> Coordinate {
+    pub fn new() -> Coordinate {
         Coordinate {
-            euclidian: (0, 0),
+            cartesian: (0, 0),
             index: 0,
         }
     }
 
     pub fn get_pos(&self) -> (i32, i32) {
-        self.euclidian
+        self.cartesian
     }
 
     pub fn get_index(&self) -> u32 {
         self.index
     }
 
-    pub fn from_pos(graph: &Graph, pos: (i32, i32)) -> Result<Coordinate, Error> {
+    pub fn from_pos(graph: &Graph, pos: (i32, i32)) -> Option<Coordinate> {
+//        dbg!(graph.width, graph.height);
         if pos.0 >= graph.width as i32 / 2 || pos.0 <= -(graph.width as i32 / 2) {
-            panic!(
-                "X coordinate should be less than {} and more than {}, {} given",
-                graph.width / 2,
-                -(graph.width as i32 / 2),
-                pos.0
-            );
+            return None;
         }
 
         if pos.1 >= graph.height as i32 / 2 || pos.1 <= -(graph.height as i32 / 2) {
-            panic!(
-                "Y coordinate should be less than {} and more than {}, {} given",
-                graph.height / 2,
-                -(graph.height as i32 / 2),
-                pos.1
-            );
+            return None;
         }
 
         let index = ((graph.width / 2) as i32 + pos.0)
@@ -61,8 +52,8 @@ impl Coordinate {
 //            pos.0, pos.1, index
 //        );
 
-        Ok(Coordinate {
-            euclidian: pos,
+        Some(Coordinate {
+            cartesian: pos,
             index: index as u32,
         })
     }
@@ -78,20 +69,20 @@ impl Coordinate {
         let y = index / graph.width;
         let x = index % graph.width;
         Ok(Coordinate {
-            euclidian: (x as i32, y as i32),
+            cartesian: (x as i32, y as i32),
             index,
         })
     }
 
     pub fn substr(graph: &Graph, coordinate: &Coordinate, coordinate_2: &Coordinate) -> Coordinate {
-        let euclidian = (
-            (coordinate.euclidian.0 - coordinate_2.euclidian.0),
-            (coordinate.euclidian.1 - coordinate_2.euclidian.1),
+        let cartesian = (
+            (coordinate.cartesian.0 - coordinate_2.cartesian.0),
+            (coordinate.cartesian.1 - coordinate_2.cartesian.1),
         );
 
         Coordinate {
-            euclidian,
-            index: Coordinate::from_pos(graph, euclidian).unwrap().index,
+            cartesian,
+            index: Coordinate::from_pos(graph, cartesian).unwrap().index,
         }
     }
 }

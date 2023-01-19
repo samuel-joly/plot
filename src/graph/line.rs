@@ -12,14 +12,17 @@ pub struct Line {
 
     /// Graphics for un-even line (kind of very low level anti-aliasing)
     pub increment: i32,
+
     pub increment_rest: i32,
-    pub equalizer:u32,
+
+    pub equalizer:f64,
 
     /// Is it not clear enough ?
     pub is_drawed: bool,
 }
 
 impl Line {
+    /// COUCOU
     pub fn from(start_pos: (i32, i32), end_pos: (i32, i32), color: u32) -> Line {
         Line {
             from: start_pos,
@@ -28,7 +31,7 @@ impl Line {
             is_drawed: false,
             increment:0,
             increment_rest:0,
-            equalizer:0,
+            equalizer:0.0,
         }
     }
 
@@ -40,7 +43,7 @@ impl Line {
             is_drawed: false,
             increment:0,
             increment_rest:0,
-            equalizer:0,
+            equalizer:0.0,
         }
     }
 
@@ -57,26 +60,25 @@ impl Line {
         (coord.get_pos().0, coord.get_pos().1)
     }
 
-    pub fn is_dimension_even(&mut self, graph: &Graph) {
-        let (line_width, line_height) = self.dimension(graph);
+    pub fn is_dimension_even(&mut self, dimension: (i32,i32)) {
+        let (line_width, line_height) = dimension;
         let u_line_width = line_width.abs();
         let u_line_height = line_height.abs();
-
-        if line_width >= line_height {
+        if u_line_width >= u_line_height {
             self.increment = u_line_width / u_line_height;
             self.increment_rest = u_line_width % u_line_height;
             if self.increment_rest != 0 {
-                self.equalizer = (u_line_width / self.increment_rest) as u32;
+                self.equalizer = (line_width / self.increment_rest) as f64;
             } else {
-                self.equalizer = 0;
+                self.equalizer = 0.0;
             }
         } else {
             self.increment = u_line_height / u_line_width;
             self.increment_rest = u_line_height % u_line_width;
             if self.increment_rest != 0 {
-                self.equalizer = (u_line_height / self.increment_rest) as u32;
+                self.equalizer = (line_height / self.increment_rest) as f64;
             } else {
-                self.equalizer = 0;
+                self.equalizer = 0.0;
             }
         }
     }
