@@ -24,7 +24,6 @@ impl Coordinate {
     }
 
     pub fn from_pos(graph: &Graph, pos: (i32, i32)) -> Option<Coordinate> {
-//        dbg!(graph.width, graph.height);
         if pos.0 >= graph.width as i32 / 2 || pos.0 <= -(graph.width as i32 / 2) {
             return None;
         }
@@ -36,21 +35,6 @@ impl Coordinate {
         let index = ((graph.width / 2) as i32 + pos.0)
             + (((graph.width * graph.height) / 2) as i32)
             - graph.width as i32 * pos.1;
-
-//        dbg!(
-//            (graph.width / 2) as i32 + pos.0,
-//            ((graph.width * graph.height) / 2) as i32,
-//            graph.width as i32 * pos.1,
-//            (((graph.width * graph.height) / 2) as i32) + (graph.width as i32 * pos.1),
-//            graph.width,
-//            graph.height,
-//            graph.width * graph.height
-//        );
-//
-//        println!(
-//            "Printing point at ({},{}) for index {}",
-//            pos.0, pos.1, index
-//        );
 
         Some(Coordinate {
             cartesian: pos,

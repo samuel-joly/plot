@@ -33,11 +33,9 @@ impl Graph {
     }
 
     pub fn draw_line(&mut self, line: &mut Line) -> () {
-        //dbg!(&line);
         let mut stop_val = false;
 
         let coord_start: Coordinate;
-        let coord_end: Coordinate;
         match Coordinate::from_pos(&self, line.from) {
             Some(coord) => coord_start = coord,
             None => {
@@ -45,62 +43,41 @@ impl Graph {
                 stop_val = true;
             }
         };
-        match Coordinate::from_pos(&self, line.to) {
-            Some(coord) => coord_end = coord,
-            None => {
-                coord_end = Coordinate::new();
-                stop_val = true;
-            }
-        }
 
         if stop_val {
             return;
         }
 
         let dimension = line.dimension(&self);
-        line.is_dimension_even(dimension);
 
-        let mut equalize: bool = false;
         let mut new_start_x = coord_start.get_pos().0;
         let mut new_start_y = coord_start.get_pos().1;
 
-        dbg!("--",line.increment, line.increment_rest, line.equalizer, dimension );
+        let direction_x = if dimension.0 > 0 { 1 } else if dimension.0 < 0 { -1 } else { 0 };
+        let direction_y = if dimension.1 > 0 { 1 } else if dimension.1 < 0 { -1 } else { 0 };
+        let mut repeater = 1;
 
-        let mut pos_line_width = dimension.0.abs();
-        let mut x_increment: bool = false;
-        for i in 0..pos_line_width {
-            if line.equalizer != 0.0 && 0 == (i + 1) % line.equalizer as i32 {
-                equalize = true;
-                if 0 > line.equalizer as i32 {
-                    x_increment = true;
-                } else {
-                    line.increment += 1;
-                }
-                //println!("incerment {} for {}",line.increment, i);
-                pos_line_width -= line.increment;
+        let diff_dim = dimension.0.abs() - dimension.1.abs();
+        let equalizer:i32;
+        if diff_dim < 0 {
+            equalizer = dimension.0.abs() / diff_dim.abs();
+        } else if diff_dim > 0 {
+            equalizer = dimension.1.abs() / diff_dim.abs();
+        } else {
+            equalizer = 0;
+        }
+
+        dbg!(equalizer, diff_dim, dimension, &line);
+        let mut equalized:bool = false;
+        for i in 0..dimension.0.abs() {
+            if equalizer > 0 && i % equalizer == 0 {
+                equalized = true;
+                repeater += 1;
             }
 
-            if new_start_x < coord_end.get_pos().0 {
-                if x_increment {
-                    new_start_x += 1
-                }
-                new_start_x += 1
-            } else {
-                if x_increment {
-                    new_start_x -= 1
-                }
-                new_start_x -= 1
-            };
-
-            for _ in 0..line.increment {
-                if new_start_y < coord_end.get_pos().1 {
-                    new_start_y += 1;
-                } else {
-                    new_start_y -= 1;
-                };
-                line.increment_rest -= 1;
-                //println!("{}-{} {} {}", i,j, new_start_x, new_start_y);
-
+            new_start_x += direction_x;
+            for _ in 0..repeater {
+                new_start_y += direction_y;
                 match Coordinate::from_pos(&self, (new_start_x, new_start_y)) {
                     Some(new_coord) => {
                         drop(std::mem::replace(
@@ -111,17 +88,11 @@ impl Graph {
                     None => (),
                 };
             }
-
-            if equalize {
-                equalize = false;
-                if 0 > line.equalizer as i32 {
-                    x_increment = false;
-                } else {
-                    line.increment -= 1;
-                }
+            if equalized {
+                repeater -= 1;
+                equalized = false;
             }
         }
-        dbg!(line.increment_rest);
         return;
     }
 

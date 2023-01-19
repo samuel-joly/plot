@@ -10,13 +10,6 @@ pub struct Line {
     /// Color for the line, `softbuffer` color formatting is used
     pub color: u32,
 
-    /// Graphics for un-even line (kind of very low level anti-aliasing)
-    pub increment: i32,
-
-    pub increment_rest: i32,
-
-    pub equalizer:f64,
-
     /// Is it not clear enough ?
     pub is_drawed: bool,
 }
@@ -29,9 +22,6 @@ impl Line {
             to: end_pos,
             color,
             is_drawed: false,
-            increment:0,
-            increment_rest:0,
-            equalizer:0.0,
         }
     }
 
@@ -41,9 +31,6 @@ impl Line {
             to: (0, 0),
             color: 0xFFFFFF as u32,
             is_drawed: false,
-            increment:0,
-            increment_rest:0,
-            equalizer:0.0,
         }
     }
 
@@ -56,30 +43,8 @@ impl Line {
 
     pub fn dimension(&self, graph: &Graph) -> (i32,i32) {
         let c = self.to_coords(graph);
-        let coord = Coordinate::substr(graph, &c.0, &c.1);
-        (coord.get_pos().0, coord.get_pos().1)
+        let coord = Coordinate::substr(graph, &c.0, &c.1).get_pos();
+        (-coord.0, -coord.1)
     }
 
-    pub fn is_dimension_even(&mut self, dimension: (i32,i32)) {
-        let (line_width, line_height) = dimension;
-        let u_line_width = line_width.abs();
-        let u_line_height = line_height.abs();
-        if u_line_width >= u_line_height {
-            self.increment = u_line_width / u_line_height;
-            self.increment_rest = u_line_width % u_line_height;
-            if self.increment_rest != 0 {
-                self.equalizer = (line_width / self.increment_rest) as f64;
-            } else {
-                self.equalizer = 0.0;
-            }
-        } else {
-            self.increment = u_line_height / u_line_width;
-            self.increment_rest = u_line_height % u_line_width;
-            if self.increment_rest != 0 {
-                self.equalizer = (line_height / self.increment_rest) as f64;
-            } else {
-                self.equalizer = 0.0;
-            }
-        }
-    }
 }

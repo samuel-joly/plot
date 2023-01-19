@@ -36,16 +36,14 @@ fn main() {
             }
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 canvas.draw_axis();
-                let mut line_c = Line::from((-100, -100), (100, 100), 0x00CC00 as u32);
-                let mut line_ctr = Line::from((0, 0), (200, 300), 0xCCCC00 as u32);
-                let mut line_ctl = Line::from((0, 0), (-250, 300), 0xCCCC00 as u32);
-//                let mut line_cbr = Line::from((0, 0), (-656, -423), 0xCCCC00 as u32);
-//                let mut line_cbl = Line::from((0, 0), (656, -423), 0xCCCC00 as u32);
+                let mut line_c = Line::from((-100,-100), (100,100), 0xCCCC00 as u32);
+                let mut line_ctb = Line::from((-260, 300), (0,0), 0x00CC00 as u32);
+                let mut line_ctr = Line::from((260, 300), (0,0), 0x00CC00 as u32);
+                let mut line_ctl = Line::from((-260, 300), (260,300), 0x00CC00 as u32);
+                canvas.draw_line(&mut line_c);
+                canvas.draw_line(&mut line_ctb);
                 canvas.draw_line(&mut line_ctr);
                 canvas.draw_line(&mut line_ctl);
- //               canvas.draw_line(&mut line_cbr);
- //               canvas.draw_line(&mut line_cbl);
-                canvas.draw_line(&mut line_c);
                 graphics_context.set_buffer(
                     &canvas.buffer,
                     canvas.width as u16,
