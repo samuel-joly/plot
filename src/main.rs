@@ -22,6 +22,10 @@ fn main() {
 
     let mut is_pressed_first: bool = false;
     let mut is_pressed = false;
+    let red = 0xCC0000;
+    let green = 0x00CC00;
+    let blue = 0x00000CC;
+    let purple = 0xCC000CC;
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -32,18 +36,21 @@ fn main() {
                 ..
             } => {
                 canvas.set_size(window.inner_size());
-                canvas.init_buffer();
+                canvas.init_buffer(0x00 as u32, canvas.width, canvas.height);
             }
+
             Event::RedrawRequested(window_id) if window_id == window.id() => {
+                let lines = vec![
+                    Line::from((150, -50), (-150, 50), red),
+                    Line::from((0, 0), (150, 50), green),
+                    Line::from((0, 0), (1, 50), blue),
+                    Line::from((0, 0), (-175, 135), purple),
+                ];
+
+                for mut line in lines {
+                    canvas.draw_line(&mut line);
+                }
                 canvas.draw_axis();
-                let mut line_c = Line::from((-100,-100), (100,100), 0xCCCC00 as u32);
-                let mut line_ctb = Line::from((-260, 300), (0,0), 0x00CC00 as u32);
-                let mut line_ctr = Line::from((260, 300), (0,0), 0x00CC00 as u32);
-                let mut line_ctl = Line::from((-260, 300), (260,300), 0x00CC00 as u32);
-                canvas.draw_line(&mut line_c);
-                canvas.draw_line(&mut line_ctb);
-                canvas.draw_line(&mut line_ctr);
-                canvas.draw_line(&mut line_ctl);
                 graphics_context.set_buffer(
                     &canvas.buffer,
                     canvas.width as u16,

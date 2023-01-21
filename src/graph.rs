@@ -26,15 +26,14 @@ impl Graph {
         }
     }
 
-    pub fn init_buffer(&mut self) {
-        self.buffer = (0..((self.width * self.height) as usize))
-            .map(|_| 0x00 as u32)
+    pub fn init_buffer(&mut self, color:u32, width:u32, height:u32) {
+        self.buffer = (0..((width * height) as usize))
+            .map(|_| color)
             .collect::<Vec<_>>();
     }
 
     pub fn draw_line(&mut self, line: &mut Line) -> () {
         let mut stop_val = false;
-
         let coord_start: Coordinate;
         match Coordinate::from_pos(&self, line.from) {
             Some(coord) => coord_start = coord,
@@ -55,20 +54,24 @@ impl Graph {
 
         let direction_x = if dimension.0 > 0 { 1 } else if dimension.0 < 0 { -1 } else { 0 };
         let direction_y = if dimension.1 > 0 { 1 } else if dimension.1 < 0 { -1 } else { 0 };
+
         let mut repeater = 1;
 
         let diff_dim = dimension.0.abs() - dimension.1.abs();
         let equalizer:i32;
-        if diff_dim < 0 {
+        let mut equalized:bool = false;
+
+        if diff_dim > 0 {
             equalizer = dimension.0.abs() / diff_dim.abs();
-        } else if diff_dim > 0 {
+            dbg!(dimension.0.abs() % diff_dim.abs());
+        } else if diff_dim < 0 {
             equalizer = dimension.1.abs() / diff_dim.abs();
+            dbg!(dimension.1.abs() % diff_dim.abs());
         } else {
             equalizer = 0;
         }
+        dbg!(dimension, diff_dim,  equalizer, new_start_x, new_start_y);
 
-        dbg!(equalizer, diff_dim, dimension, &line);
-        let mut equalized:bool = false;
         for i in 0..dimension.0.abs() {
             if equalizer > 0 && i % equalizer == 0 {
                 equalized = true;
