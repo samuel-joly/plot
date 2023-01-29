@@ -45,16 +45,13 @@ impl Coordinate {
         })
     }
 
-    pub fn _from_index(graph: &Graph, index: u32) -> Result<Coordinate, Error> {
+    pub fn from_index(graph: &Graph, index: u32) -> Result<Coordinate, Error> {
         if index >= (graph.width * graph.height) {
-            panic!(
-                "Index should not be more than {} and less than 0",
-                graph.width * graph.height
-            );
+            return Ok(Coordinate::new());
         }
 
         let y = (index / graph.width) as i32 - (graph.height/2) as i32;
-        let x = index % graph.width;
+        let x = (index % graph.width) as i32 - graph.width as i32/2;
         Ok(Coordinate {
             cartesian: (x as i32, y as i32),
             index,

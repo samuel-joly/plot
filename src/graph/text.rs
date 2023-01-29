@@ -1,12 +1,11 @@
 use std::io::Error;
-
 use super::{coordinate::Coordinate, Graph};
 
 #[derive(Debug)]
 pub struct Text {
     pub buffer: Vec<Vec<u32>>,
     pub color: u32,
-    string: String,
+    pub string: String,
     pub position: Coordinate,
 }
 

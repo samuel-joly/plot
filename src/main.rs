@@ -17,7 +17,7 @@ fn main() {
         .build(&event_loop)
         .unwrap();
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
-    let mut canvas = Graph::new();
+    let mut graphic = Graph::new(900,400);
 
     let red = 0xCC0000;
     let green = 0x00CC00;
@@ -43,20 +43,21 @@ fn main() {
                 event: WindowEvent::Resized(..),
                 ..
             } => {
-                canvas.set_size(window.inner_size());
-                canvas.init_buffer(0x00 as u32, canvas.width, canvas.height);
-                canvas.draw(&lines);
+                graphic.set_size(window.inner_size());
+                graphic.mut_pixels = vec![];
+                graphic.init_buffer(0x00 as u32, graphic.width, graphic.height);
+                graphic.draw(&lines);
             }
 
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                if canvas.width == 0 {
+                if graphic.width == 0 {
                 } else {
-                    canvas.draw(&canvas.mouse_coordinates(c_position));
+                    graphic.draw(&graphic.mouse_coordinates(c_position));
 
                     graphics_context.set_buffer(
-                        &canvas.buffer,
-                        canvas.width as u16,
-                        canvas.height as u16,
+                        &graphic.buffer,
+                        graphic.width as u16,
+                        graphic.height as u16,
                     );
                 }
             }
@@ -68,8 +69,9 @@ fn main() {
             }
 
             Event::MainEventsCleared => {
-                canvas.draw(&lines);
-                canvas.draw_axis();
+                graphic.draw(&lines);
+                graphic.draw_axis();
+                graphic.draw_scale();
             }
             Event::DeviceEvent {
                 event: DeviceEvent::MouseWheel { .. },
@@ -91,7 +93,7 @@ fn main() {
                 ..
             } => {
                 c_position = position;
-                canvas.clear_mut_pixels();
+                graphic.clear_mut_pixels();
                 window.request_redraw();
             }
 
