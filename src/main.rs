@@ -1,13 +1,13 @@
 mod graph;
 use crate::graph::line::Line;
-
+use graph::Drawable;
 use softbuffer::GraphicsContext;
 use winit::{
+    dpi::PhysicalPosition,
     event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
-
 use crate::graph::Graph;
 
 fn main() {
@@ -16,16 +16,24 @@ fn main() {
         .with_title("Plot 0.1")
         .build(&event_loop)
         .unwrap();
-    //window.with_window_icon("Make_an_icon");
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
     let mut canvas = Graph::new();
 
-    let mut is_pressed_first: bool = false;
-    let mut is_pressed = false;
     let red = 0xCC0000;
     let green = 0x00CC00;
     let blue = 0x00000CC;
     let purple = 0xCC000CC;
+
+    let mut c_position: PhysicalPosition<f64> = PhysicalPosition::new(0.0, 0.0);
+
+    let lines: Vec<Drawable> = vec![
+        Drawable::Line(Line::from((-300, -300), (300, 300), green, false)),
+        Drawable::Line(Line::from((-300, 300), (300, -300), blue, false)),
+        Drawable::Line(Line::from((-200, 112), (0, 285), purple, false)),
+        Drawable::Line(Line::from((-200, 112), (0, -285), purple, false)),
+        Drawable::Line(Line::from((200, 112), (0, -285), red, false)),
+        Drawable::Line(Line::from((200, 112), (0, 285), red, false)),
+    ];
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -37,27 +45,21 @@ fn main() {
             } => {
                 canvas.set_size(window.inner_size());
                 canvas.init_buffer(0x00 as u32, canvas.width, canvas.height);
+                canvas.draw(&lines);
             }
 
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                let lines = vec![
-                    Line::from((150, -50), (-150, 50), red),
-                    Line::from((0, 0), (150, 50), green),
-                    Line::from((0, 0), (1, 50), blue),
-                    Line::from((0, 0), (-175, 135), purple),
-                ];
+                if canvas.width == 0 {
+                } else {
+                    canvas.draw(&canvas.mouse_coordinates(c_position));
 
-                for mut line in lines {
-                    canvas.draw_line(&mut line);
+                    graphics_context.set_buffer(
+                        &canvas.buffer,
+                        canvas.width as u16,
+                        canvas.height as u16,
+                    );
                 }
-                canvas.draw_axis();
-                graphics_context.set_buffer(
-                    &canvas.buffer,
-                    canvas.width as u16,
-                    canvas.height as u16,
-                );
             }
-
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 window_id,
@@ -65,7 +67,10 @@ fn main() {
                 *control_flow = ControlFlow::Exit;
             }
 
-            Event::MainEventsCleared => {}
+            Event::MainEventsCleared => {
+                canvas.draw(&lines);
+                canvas.draw_axis();
+            }
             Event::DeviceEvent {
                 event: DeviceEvent::MouseWheel { .. },
                 ..
@@ -76,10 +81,8 @@ fn main() {
                 ..
             } => {
                 if state == ElementState::Pressed && button == MouseButton::Left {
-                    is_pressed = true;
-                    is_pressed_first = true;
+                } else if state == ElementState::Pressed && button == MouseButton::Right {
                 } else {
-                    is_pressed = false;
                 }
             }
 
@@ -87,17 +90,9 @@ fn main() {
                 event: WindowEvent::CursorMoved { position, .. },
                 ..
             } => {
-                if is_pressed_first && is_pressed {
-                    canvas
-                        .offset
-                        .prepare_movement(position.x as u32, position.y as u32);
-                    is_pressed_first = false;
-                } else if is_pressed {
-                    canvas
-                        .offset
-                        .diff_drag_to_offset(position.x as i32, position.y as i32);
-                    window.request_redraw();
-                }
+                c_position = position;
+                canvas.clear_mut_pixels();
+                window.request_redraw();
             }
 
             _ => {}
