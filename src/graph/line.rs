@@ -38,42 +38,6 @@ impl Line {
         }
     }
 
-    fn recurs_dimension(x: i32, y: i32) -> Vec<(i32, i32, i32, i32)> {
-        let div = x / y;
-        let rest = x % y;
-        let mut res: Vec<(i32, i32, i32, i32)> = vec![(x, y, div, rest)];
-        if rest != 0 {
-            let new_recurs = Line::recurs_dimension(x, rest);
-            for i in &new_recurs {
-                res.push(*i);
-            }
-        }
-        res
-    }
-
-    fn get_evo(x_dimension: i32, y_dimension: i32) -> (i32, i32) {
-        let x_evo: i32;
-        let y_evo: i32;
-
-        if x_dimension < 0 {
-            x_evo = -1;
-        } else if x_dimension > 0 {
-            x_evo = 1;
-        } else {
-            x_evo = 0
-        };
-
-        if y_dimension < 0 {
-            y_evo = -1;
-        } else if y_dimension > 0 {
-            y_evo = 1;
-        } else {
-            y_evo = 0
-        };
-
-        (x_evo, y_evo)
-    }
-
     pub fn draw(&self, graph: &mut Graph) -> () {
         let coord_start = Coordinate::from_pos(&graph, self.from).unwrap();
 
@@ -119,7 +83,8 @@ impl Line {
         if stop_val {
             return (0, 0);
         }
-        let coord = Coordinate::substr(graph, &c.0, &c.1).get_pos();
+        let coord = Coordinate::substr(&c.0, &c.1);
+
         (-coord.0, -coord.1)
     }
 }

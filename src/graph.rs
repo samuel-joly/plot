@@ -1,12 +1,29 @@
+pub mod coordinate;
+pub mod line;
+mod offset;
+pub mod text;
 use line::Line;
+
 use offset::Offset;
-use winit::dpi::PhysicalSize;
+use winit::dpi::{PhysicalSize, PhysicalPosition};
+
+pub use text::Text;
 
 use self::coordinate::Coordinate;
 
-mod coordinate;
-pub mod line;
-mod offset;
+pub enum Drawable {
+    Line(Line),
+    Text(Text),
+}
+
+impl Drawable {
+    fn draw_shape(&self, graph: &mut Graph) {
+        match self {
+            Drawable::Line(line) => line.draw(graph),
+            Drawable::Text(text) => text.draw(graph),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Graph {
@@ -14,6 +31,7 @@ pub struct Graph {
     pub height: u32,
     pub buffer: Vec<u32>,
     pub offset: Offset,
+    pub mut_pixels: Vec<u32>,
 }
 
 impl Graph {
@@ -23,80 +41,20 @@ impl Graph {
             height: 0,
             buffer: Vec::new(),
             offset: Offset::new(),
+            mut_pixels: vec![],
         }
     }
 
-    pub fn init_buffer(&mut self, color:u32, width:u32, height:u32) {
+    pub fn init_buffer(&mut self, color: u32, width: u32, height: u32) {
         self.buffer = (0..((width * height) as usize))
             .map(|_| color)
             .collect::<Vec<_>>();
     }
 
-    pub fn draw_line(&mut self, line: &mut Line) -> () {
-        let mut stop_val = false;
-        let coord_start: Coordinate;
-        match Coordinate::from_pos(&self, line.from) {
-            Some(coord) => coord_start = coord,
-            None => {
-                coord_start = Coordinate::new();
-                stop_val = true;
-            }
-        };
-
-        if stop_val {
-            return;
+    pub fn draw(&mut self, shapes: &Vec<Drawable>) {
+        for shape in shapes {
+            shape.draw_shape(self);
         }
-
-        let dimension = line.dimension(&self);
-
-        let mut new_start_x = coord_start.get_pos().0;
-        let mut new_start_y = coord_start.get_pos().1;
-
-        let direction_x = if dimension.0 > 0 { 1 } else if dimension.0 < 0 { -1 } else { 0 };
-        let direction_y = if dimension.1 > 0 { 1 } else if dimension.1 < 0 { -1 } else { 0 };
-
-        let mut repeater = 1;
-
-        let diff_dim = dimension.0.abs() - dimension.1.abs();
-        let equalizer:i32;
-        let mut equalized:bool = false;
-
-        if diff_dim > 0 {
-            equalizer = dimension.0.abs() / diff_dim.abs();
-            dbg!(dimension.0.abs() % diff_dim.abs());
-        } else if diff_dim < 0 {
-            equalizer = dimension.1.abs() / diff_dim.abs();
-            dbg!(dimension.1.abs() % diff_dim.abs());
-        } else {
-            equalizer = 0;
-        }
-        dbg!(dimension, diff_dim,  equalizer, new_start_x, new_start_y);
-
-        for i in 0..dimension.0.abs() {
-            if equalizer > 0 && i % equalizer == 0 {
-                equalized = true;
-                repeater += 1;
-            }
-
-            new_start_x += direction_x;
-            for _ in 0..repeater {
-                new_start_y += direction_y;
-                match Coordinate::from_pos(&self, (new_start_x, new_start_y)) {
-                    Some(new_coord) => {
-                        drop(std::mem::replace(
-                            &mut self.buffer[new_coord.get_index() as usize],
-                            line.color,
-                        ));
-                    }
-                    None => (),
-                };
-            }
-            if equalized {
-                repeater -= 1;
-                equalized = false;
-            }
-        }
-        return;
     }
 
     pub fn draw_axis(&mut self) {
@@ -122,5 +80,51 @@ impl Graph {
     pub fn set_size(&mut self, size: PhysicalSize<u32>) {
         self.width = size.width;
         self.height = size.height;
+    }
+
+    pub fn get_mouse_axis(&self, position: (i32, i32)) -> (Line, Line) {
+        let x_cursor = Line::from(
+            (position.0, 0),
+            (position.0, position.1),
+            0x0000CC as u32,
+            true,
+        );
+
+        let y_cursor = Line::from(
+            (0, position.1),
+            (position.0, position.1),
+            0x0000CC as u32,
+            true,
+        );
+        (x_cursor, y_cursor)
+    }
+
+    pub fn clear_mut_pixels(&mut self) {
+        for index in &self.mut_pixels {
+            drop(std::mem::replace(
+                &mut self.buffer[*index as usize],
+                0x00 as u32,
+            ));
+        }
+        self.mut_pixels = vec![];
+    }
+
+    pub fn mouse_coordinates(&self, mouse_position: PhysicalPosition<f64>) -> Vec<Drawable> {
+        let x = mouse_position.x.floor() as i32 - (self.width / 2) as i32;
+        let y = (self.height / 2) as i32 - mouse_position.y.floor() as i32;
+        let (mouse_axis_x, mouse_axis_y) = self.get_mouse_axis((x, y+3));
+
+        let mouse_txt = Text::from(
+            format!("x:{} y:{}", x, y).to_string(),
+            0x00CC00 as u32,
+            Coordinate::from_pos(&self, (x + 3, y + 10)).unwrap(),
+        )
+        .unwrap();
+
+        vec![
+            Drawable::Text(mouse_txt),
+            Drawable::Line(mouse_axis_x),
+            Drawable::Line(mouse_axis_y),
+        ]
     }
 }
