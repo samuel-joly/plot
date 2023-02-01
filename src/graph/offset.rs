@@ -9,7 +9,7 @@ pub struct Offset {
 }
 
 impl Offset {
-    pub fn new() -> Offset{
+    pub fn _new() -> Offset{
         Offset{
             x:0,
             y:0,

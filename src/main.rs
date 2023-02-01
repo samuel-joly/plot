@@ -1,5 +1,6 @@
 mod graph;
 use crate::graph::line::Line;
+use crate::graph::Graph;
 use graph::Drawable;
 use softbuffer::GraphicsContext;
 use winit::{
@@ -8,7 +9,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
-use crate::graph::Graph;
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -17,22 +17,23 @@ fn main() {
         .build(&event_loop)
         .unwrap();
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
-    let mut graphic = Graph::new(900,400);
+    let mut graphic = Graph::new();
+    graphic.scale.set_scale(2000.0, 2000.0);
 
     let red = 0xCC0000;
     let green = 0x00CC00;
-    let blue = 0x00000CC;
-    let purple = 0xCC000CC;
+    //let blue = 0x00000CC;
+    //    let purple = 0xCC000CC;
 
     let mut c_position: PhysicalPosition<f64> = PhysicalPosition::new(0.0, 0.0);
 
-    let lines: Vec<Drawable> = vec![
-        Drawable::Line(Line::from((-300, -300), (300, 300), green, false)),
-        Drawable::Line(Line::from((-300, 300), (300, -300), blue, false)),
-        Drawable::Line(Line::from((-200, 112), (0, 285), purple, false)),
-        Drawable::Line(Line::from((-200, 112), (0, -285), purple, false)),
-        Drawable::Line(Line::from((200, 112), (0, -285), red, false)),
-        Drawable::Line(Line::from((200, 112), (0, 285), red, false)),
+    let mut lines: Vec<Drawable> = vec![
+        Drawable::Line(Line::from((-500, -500), (500, -500), red, true)),
+        Drawable::Line(Line::from((500, 500), (-500, 500), red, true)),
+        Drawable::Line(Line::from((-500, -500), (-500, 500), red, true)),
+        Drawable::Line(Line::from((500, 500), (500, -500), red, true)),
+        Drawable::Line(Line::from((500, 500), (-500, -500), green, true)),
+        Drawable::Line(Line::from((500, -500), (-500, 500), green, true)),
     ];
 
     event_loop.run(move |event, _, control_flow| {
@@ -45,19 +46,16 @@ fn main() {
             } => {
                 graphic.set_size(window.inner_size());
                 graphic.mut_pixels = vec![];
-                graphic.init_buffer(0x00 as u32, graphic.width, graphic.height);
-                graphic.draw(&lines);
+                graphic.fill_buffer(0x00 as u32, graphic.scale.width, graphic.scale.height);
             }
 
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                if graphic.width == 0 {
+                if graphic.scale.width == 0 {
                 } else {
-                    graphic.draw(&graphic.mouse_coordinates(c_position));
-
                     graphics_context.set_buffer(
                         &graphic.buffer,
-                        graphic.width as u16,
-                        graphic.height as u16,
+                        graphic.scale.width as u16,
+                        graphic.scale.height as u16,
                     );
                 }
             }
@@ -69,14 +67,47 @@ fn main() {
             }
 
             Event::MainEventsCleared => {
-                graphic.draw(&lines);
-                graphic.draw_axis();
-                graphic.draw_scale();
+                if graphic.scale.width != 0 {
+                    graphic.clear_mut_pixels();
+                    graphic.draw(&mut lines);
+                    graphic.draw_scale();
+                    graphic.draw_mouse_axis(c_position);
+                }
             }
             Event::DeviceEvent {
-                event: DeviceEvent::MouseWheel { .. },
+                event: DeviceEvent::MouseWheel { delta },
                 ..
-            } => {}
+            } => {
+                match delta {
+                    winit::event::MouseScrollDelta::PixelDelta(p) => {
+                        dbg!(p);
+                    }
+                    winit::event::MouseScrollDelta::LineDelta(_x, y) => {
+                        if y > 0.0 {
+                            graphic.scale.set_scale(
+                                graphic.scale.interval_x.floor()
+                                    - (graphic.scale.og_interval_x * 0.2).floor(),
+                                graphic.scale.interval_y.floor()
+                                    - (graphic.scale.og_interval_y * 0.2).floor(),
+                            );
+                        } else {
+                            graphic.scale.set_scale(
+                                graphic.scale.interval_x.floor()
+                                    + (graphic.scale.og_interval_x * 0.2).floor(),
+                                graphic.scale.interval_y.floor()
+                                    + (graphic.scale.og_interval_y * 0.2).floor(),
+                            );
+                        }
+                        for l in lines.iter_mut() {
+                            match l {
+                                Drawable::Line(line) => line.scaled = false,
+                                _ => (),
+                            }
+                        }
+                    }
+                }
+                window.request_redraw();
+            }
 
             Event::WindowEvent {
                 event: WindowEvent::MouseInput { state, button, .. },
@@ -93,7 +124,6 @@ fn main() {
                 ..
             } => {
                 c_position = position;
-                graphic.clear_mut_pixels();
                 window.request_redraw();
             }
 
