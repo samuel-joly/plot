@@ -1,4 +1,3 @@
-use super::Graph;
 use std::io::Error;
 
 #[derive(Debug)]
@@ -23,21 +22,24 @@ impl Coordinate {
         self.index
     }
 
-    pub fn from_pos(graph: &Graph, pos: (i32, i32)) -> Result<Coordinate,Error> {
-        if graph.width == 0 || graph.height == 0 {
+    pub fn from_pos(realsize: (u32,u32), pos: (i32, i32)) -> Result<Coordinate,Error> {
+        let posx = pos.0 ;
+        let posy = pos.1 ;
+
+        if realsize.0 == 0 || realsize.1 == 0 {
             return Ok(Coordinate::new());
         }
-        if pos.0 > graph.width as i32 / 2 || pos.0 < -(graph.width as i32 / 2) {
+        if posx > realsize.0 as i32 / 2 || posx < -(realsize.0 as i32 / 2) {
             return Ok(Coordinate::new());
         }
 
-        if pos.1 > graph.height as i32 / 2 || pos.1 < -(graph.height as i32 / 2) {
+        if posy > realsize.1 as i32 / 2 || posy < -(realsize.1 as i32 / 2) {
             return Ok(Coordinate::new());
         }
 
-        let index = ((graph.width / 2) as i32 + pos.0)
-            + (((graph.width * graph.height) / 2) as i32)
-            - graph.width as i32 * pos.1;
+        let index = (realsize.0 / 2) as i32 + posx
+            + (((realsize.0 * realsize.1) / 2) as i32)
+            - (realsize.0 as i32 * posy);
 
         Ok(Coordinate {
             cartesian: pos,
@@ -45,16 +47,14 @@ impl Coordinate {
         })
     }
 
-    pub fn _from_index(graph: &Graph, index: u32) -> Result<Coordinate, Error> {
-        if index >= (graph.width * graph.height) {
-            panic!(
-                "Index should not be more than {} and less than 0",
-                graph.width * graph.height
-            );
+    pub fn from_index(realsize: (u32,u32), mut index: u32) -> Result<Coordinate, Error> {
+        if index >= (realsize.0 * realsize.1) {
+            index -= index - (realsize.0 * realsize.1) -1;
         }
 
-        let y = (index / graph.width) as i32 - (graph.height/2) as i32;
-        let x = index % graph.width;
+        let y = (index / realsize.0) as i32 - (realsize.1/2) as i32;
+        let x = (index % realsize.0) as i32 - realsize.0 as i32/2;
+
         Ok(Coordinate {
             cartesian: (x as i32, y as i32),
             index,
