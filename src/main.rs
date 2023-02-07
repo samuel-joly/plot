@@ -1,5 +1,5 @@
 mod graph;
-use graph::{Graph, drawable::Drawable, drawable::line::Line };
+use graph::{Graph, drawable::{line::Line, text::Text}};
 use softbuffer::GraphicsContext;
 use winit::{
     dpi::PhysicalPosition,
@@ -24,15 +24,14 @@ fn main() {
     //    let purple = 0xCC000CC;
 
     let mut c_position: PhysicalPosition<f64> = PhysicalPosition::new(0.0, 0.0);
+    let mut mouse_coords = (Text::_new(), Text::_new());
 
-    let mut lines: Vec<Drawable> = vec![
-        Drawable::Line(Line::from((-500, -500), (500, -500), red, true)),
-        Drawable::Line(Line::from((500, 500), (-500, 500), red, true)),
-        Drawable::Line(Line::from((-500, -500), (-500, 500), red, true)),
-        Drawable::Line(Line::from((500, 500), (500, -500), red, true)),
-        Drawable::Line(Line::from((500, 500), (-500, -500), green, true)),
-        Drawable::Line(Line::from((500, -500), (-500, 500), green, true)),
-    ];
+    graphic.shapes.push(Box::new(Line::from((-500, -500), (500, -500), red, true)));
+    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, 500), red, true)));
+    graphic.shapes.push(Box::new(Line::from((-500, -500), (-500, 500), red, true)));
+    graphic.shapes.push(Box::new(Line::from((500, 500), (500, -500), red, true)));
+    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, -500), green, true)));
+    graphic.shapes.push(Box::new(Line::from((500, -500), (-500, 500), green, true)));
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -66,9 +65,14 @@ fn main() {
 
             Event::MainEventsCleared => {
                 if graphic.scale.width != 0 {
-                    graphic.clear_mut_pixels();
-                    graphic.draw(&mut lines);
+                    graphic.clear_shapes();
+                    graphic.draw_shapes();
                     graphic.draw_scale();
+                    graphic.clear_shape(&mouse_coords.0);
+                    graphic.clear_shape(&mouse_coords.1);
+                    mouse_coords = graphic.mouse_coordinates(c_position);
+                    graphic.draw_shape(&mut mouse_coords.0);
+                    graphic.draw_shape(&mut mouse_coords.1);
                     graphic.draw_mouse_axis(c_position);
                 }
             }
@@ -96,10 +100,11 @@ fn main() {
                                     + (graphic.scale.original_interval_y * 0.2).floor(),
                             );
                         }
-                        for l in lines.iter_mut() {
-                            match l {
-                                Drawable::Line(line) => line.scaled = false,
-                                _ => (),
+                        for l in graphic.shapes.iter_mut(){
+                            if l.is_scalable() {
+                                if l.is_scaled() {
+                                    l.set_is_scaled(false);
+                                }
                             }
                         }
                     }

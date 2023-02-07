@@ -1,5 +1,10 @@
 use winit::dpi::PhysicalSize;
 
+use super::{
+    coordinate::Coordinate,
+    drawable::{text::Text, Drawable},
+};
+
 #[derive(Debug)]
 pub enum Orientation {
     _FromZero,
@@ -21,11 +26,11 @@ pub struct Scale {
     pub current_interval_x: f32,
     pub current_interval_y: f32,
 
-    pub orientation: Orientation
+    pub orientation: Orientation,
 }
 
 impl Scale {
-    pub fn new () -> Scale {
+    pub fn new() -> Scale {
         Scale {
             factor_x: 0.00,
             factor_y: 0.00,
@@ -54,7 +59,7 @@ impl Scale {
         sc
     }
 
-    pub fn set_size(&mut self, size:PhysicalSize<u32>) {
+    pub fn set_size(&mut self, size: PhysicalSize<u32>) {
         self.width = size.width;
         self.height = size.height;
         self.set_scale_factor();
@@ -76,4 +81,62 @@ impl Scale {
         self.factor_y = self.height as f32 / self.current_interval_y as f32;
     }
 
+    pub fn draw(&self) -> Vec<u32> {
+        let mut interval_texts = vec![];
+        let width: u32 = self.width;
+        let height: u32 = self.height;
+
+        for i in 1..10 {
+            let mut coord_y = i * ((height as f32 / 10.0) * width as f32).floor() as u32;
+            coord_y -= coord_y % width;
+            coord_y += width;
+            let coord_x = (i as f32 * (width as f32 / 10.0)).floor() as u32;
+
+            let line_x = Coordinate::from_index((width, height), coord_x)
+                .unwrap()
+                .get_pos();
+            let line_y = Coordinate::from_index((width, height), coord_y)
+                .unwrap()
+                .get_pos();
+
+            let mut index_x = coord_x;
+            let mut index_y = coord_y;
+
+            for _ in 0..4 {
+                interval_texts.push(index_y);
+                interval_texts.push(index_x);
+                index_y += 1;
+                index_x += width;
+            }
+
+            if i % 2 == 0 {
+                let x_val = f32::trunc((line_x.0 as f32 / self.factor_x) * 100.0) / 100.0;
+                let y_val = f32::trunc((-line_y.1 as f32 / self.factor_y) * 100.0) / 100.0;
+
+                let text_x = x_val.to_string();
+                let text_y = y_val.to_string();
+
+                let coord_text_x = Coordinate::from_index(
+                    (width, height),
+                    index_x - (6 * text_x.len() as u32) + (5 * width),
+                )
+                .unwrap();
+                let coord_text_y =
+                    Coordinate::from_index((width, height), index_y - (3 * width)).unwrap();
+
+                let mut scale_text_x =
+                    Text::from(text_x, 0xFFFFFF as u32, coord_text_x, Some(true), None).unwrap();
+                let mut scale_text_y =
+                    Text::from(text_y, 0xFFFFFF as u32, coord_text_y, Some(true), None).unwrap();
+
+                for index in scale_text_x.draw((self.width, self.height)) {
+                    interval_texts.push(index);
+                }
+                for index in scale_text_y.draw((self.width, self.height)) {
+                    interval_texts.push(index);
+                }
+            }
+        }
+        interval_texts
+    }
 }

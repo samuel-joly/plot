@@ -1,6 +1,6 @@
 use crate::graph::coordinate::Coordinate;
-use crate::Graph;
-use std::io::Error;
+
+use super::Drawable;
 
 /// Colored straight line
 #[derive(Debug)]
@@ -15,6 +15,7 @@ pub struct Line {
     pub is_drawed: bool,
     pub is_mut: bool,
     pub scaled: bool,
+    pub mut_pixel: Vec<u32>,
 }
 
 impl Line {
@@ -28,6 +29,7 @@ impl Line {
             is_drawed: false,
             is_mut,
             scaled: false,
+            mut_pixel: vec![],
         }
     }
 
@@ -41,54 +43,63 @@ impl Line {
             is_drawed: false,
             is_mut: false,
             scaled: false,
+            mut_pixel: vec![],
         }
     }
 
-    pub fn draw(&mut self, graph: &mut Graph) -> () {
-        let coord_start = Coordinate::from_pos((graph.scale.width, graph.scale.height), self.from)
-            .unwrap()
-            .get_pos();
-        let line_dimension = self.dimension(&graph);
-
-        let pix = std::cmp::max(line_dimension.0.abs(), line_dimension.1.abs());
-        for i in 0..pix {
-            let x = coord_start.0 + line_dimension.0 * i / pix;
-            let y = coord_start.1 + line_dimension.1 * i / pix;
-
-            let coord =
-                Coordinate::from_pos((graph.scale.width, graph.scale.height), (x, y)).unwrap();
-            if self.is_mut {
-                graph.mut_pixels.push(coord.get_index());
-            }
-            drop(std::mem::replace(
-                &mut graph.buffer[coord.get_index() as usize],
-                self.color,
-            ));
-        }
+    pub fn to_coords(&self, size: (u32, u32)) -> (Coordinate, Coordinate) {
+        let start_pos: Coordinate = Coordinate::from_pos((size.0, size.1), self.from).unwrap();
+        let end_pos: Coordinate = Coordinate::from_pos((size.0, size.1), self.to).unwrap();
+        (start_pos, end_pos)
     }
 
-    pub fn to_coords(&self, graph: &Graph) -> Result<(Coordinate, Coordinate), Error> {
-        let start_pos: Coordinate =
-            Coordinate::from_pos((graph.scale.width, graph.scale.height), self.from)?;
-        let end_pos: Coordinate =
-            Coordinate::from_pos((graph.scale.width, graph.scale.height), self.to)?;
-        Ok((start_pos, end_pos))
-    }
-
-    pub fn dimension(&self, graph: &Graph) -> (i32, i32) {
-        let c: (Coordinate, Coordinate);
-        let mut stop_val = false;
-        match self.to_coords(graph) {
-            Ok(val) => c = val,
-            Err(..) => {
-                c = (Coordinate::new(), Coordinate::new());
-                stop_val = true
-            }
-        }
-        if stop_val {
-            return (0, 0);
-        }
+    pub fn dimension(&self, size: (u32, u32)) -> (i32, i32) {
+        let c: (Coordinate, Coordinate) = self.to_coords(size);
         let coord = Coordinate::substr(&c.0, &c.1);
         (-coord.0, -coord.1)
+    }
+}
+
+impl Drawable for Line {
+    fn draw(&mut self, size: (u32, u32)) -> Vec<u32> {
+        self.mut_pixel = vec![];
+        let width = size.0;
+        let height = size.1;
+
+        let line_dimension = self.dimension((width, height));
+        let pix = std::cmp::max(line_dimension.0.abs(), line_dimension.1.abs());
+
+        for i in 0..pix {
+            let x = self.from.0 + line_dimension.0 * i / pix;
+            let y = self.from.1 + line_dimension.1 * i / pix;
+
+            let coord = Coordinate::from_pos((width, height), (x, y)).unwrap();
+            self.mut_pixel.push(coord.get_index());
+        }
+        self.mut_pixel.clone()
+    }
+
+    fn is_mut(&self) -> bool {
+        self.is_mut
+    }
+
+    fn get_mut_pixels(&self) -> Vec<u32> {
+        self.mut_pixel.clone()
+    }
+
+    fn set_mut_pixels(&mut self, mut_pixels: Vec<u32>) {
+        self.mut_pixel = mut_pixels;
+    }
+
+    fn is_scaled(&self) -> bool {
+        self.scaled
+    }
+
+    fn set_is_scaled(&mut self, scaled:bool) {
+        self.scaled = scaled;
+    }
+
+    fn is_scalable(&self) -> bool {
+        true
     }
 }

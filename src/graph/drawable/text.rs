@@ -1,6 +1,7 @@
-use crate::Graph;
 use crate::graph::coordinate::Coordinate;
 use std::io::Error;
+
+use super::Drawable;
 
 #[derive(Debug)]
 pub struct Text {
@@ -9,6 +10,49 @@ pub struct Text {
     pub string: String,
     pub position: Coordinate,
     pub is_mut: bool,
+    pub is_scaled: bool,
+    pub mut_pixel: Vec<u32>,
+}
+
+impl Drawable for Text {
+    fn draw(&mut self, size: (u32,u32)) -> Vec<u32> {
+        let mut symbol_count = 0;
+        let start_index = self.position.get_index();
+        for symbol in &self.buffer {
+            let mut index = start_index + (symbol_count * 9);
+            let mut count = 0;
+            for pixel in symbol {
+                if *pixel != 0x000000 as u32 {
+                    self.mut_pixel.push(index);
+                }
+                index += 1;
+                count += 1;
+                if count % 6 == 0 {
+                    index -= 6;
+                    index += size.0;
+                }
+            }
+            symbol_count += 1;
+        }
+        self.mut_pixel.clone()
+    }
+
+    fn is_mut(&self) -> bool {
+        self.is_mut
+    }
+
+    fn get_mut_pixels(&self) -> Vec<u32> {
+        self.mut_pixel.clone()
+    }
+
+    fn set_mut_pixels(&mut self, mut_pixels: Vec<u32>){
+        self.mut_pixel = mut_pixels;
+    }
+
+    fn set_is_scaled(&mut self, scaled:bool) {
+        self.is_scaled = scaled;
+    }
+
 }
 
 impl Text {
@@ -19,6 +63,8 @@ impl Text {
             string: "".to_string(),
             position: Coordinate::new(),
             is_mut: false,
+            is_scaled: false,
+            mut_pixel:vec![],
         }
     }
 
@@ -26,41 +72,22 @@ impl Text {
         string: String,
         color: u32,
         position: Coordinate,
-        is_mut: bool,
+        is_mut: Option<bool>,
+        is_scaled: Option<bool>,
     ) -> Result<Text, Error> {
         let mut t = Text {
             buffer: vec![vec![]],
             color,
             string,
             position,
-            is_mut,
+            is_mut: is_mut.unwrap_or(false),
+            is_scaled: is_scaled.unwrap_or(false),
+            mut_pixel:vec![],
         };
 
         t.init_buffer()?;
 
         Ok(t)
-    }
-
-    pub fn draw(&self, graph: &mut Graph) {
-        let mut symbol_count = 0;
-        let start_index = self.position.get_index();
-        for symbol in &self.buffer {
-            let mut index = start_index + (symbol_count * 9);
-            let mut count = 0;
-            for pixel in symbol {
-                drop(std::mem::replace(&mut graph.buffer[index as usize], *pixel));
-                if self.is_mut {
-                    graph.mut_pixels.push(index);
-                }
-                index += 1;
-                count += 1;
-                if count % 6 == 0 {
-                    index -= 6;
-                    index += graph.scale.width;
-                }
-            }
-            symbol_count += 1;
-        }
     }
 
     fn init_buffer(&mut self) -> Result<(), Error> {
