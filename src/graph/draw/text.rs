@@ -6,25 +6,26 @@ use super::Drawable;
 #[derive(Debug)]
 pub struct Text {
     pub buffer: Vec<Vec<u32>>,
-    pub color: u32,
     pub string: String,
     pub position: Coordinate,
     pub is_mut: bool,
-    pub is_scaled: bool,
     pub mut_pixel: Vec<u32>,
+    pub foreground:u32,
+    pub background:u32,
+    pub alt:u32,
 }
 
 impl Drawable for Text {
-    fn draw(&mut self, size: (u32,u32)) -> Vec<u32> {
+    fn draw(&mut self, size: (u32, u32)) -> Vec<(u32, u32)> {
         let mut symbol_count = 0;
+        let mut ret:Vec<(u32,u32)> = vec![];
         let start_index = self.position.get_index();
         for symbol in &self.buffer {
             let mut index = start_index + (symbol_count * 9);
             let mut count = 0;
             for pixel in symbol {
-                if *pixel != 0x000000 as u32 {
-                    self.mut_pixel.push(index);
-                }
+                self.mut_pixel.push(index);
+                ret.push((index, *pixel));
                 index += 1;
                 count += 1;
                 if count % 6 == 0 {
@@ -34,7 +35,7 @@ impl Drawable for Text {
             }
             symbol_count += 1;
         }
-        self.mut_pixel.clone()
+        ret
     }
 
     fn is_mut(&self) -> bool {
@@ -45,44 +46,42 @@ impl Drawable for Text {
         self.mut_pixel.clone()
     }
 
-    fn set_mut_pixels(&mut self, mut_pixels: Vec<u32>){
+    fn set_mut_pixels(&mut self, mut_pixels: Vec<u32>) {
         self.mut_pixel = mut_pixels;
     }
-
-    fn set_is_scaled(&mut self, scaled:bool) {
-        self.is_scaled = scaled;
-    }
-
 }
 
 impl Text {
     pub fn _new() -> Text {
         Text {
             buffer: vec![vec![]],
-            color: 0xFFFFFF as u32,
             string: "".to_string(),
             position: Coordinate::new(),
             is_mut: false,
-            is_scaled: false,
-            mut_pixel:vec![],
+            mut_pixel: vec![],
+            foreground: 0xFFFFFF,
+            background: 0x000000,
+            alt: 0x00FF00,
         }
     }
 
     pub fn from(
         string: String,
-        color: u32,
         position: Coordinate,
         is_mut: Option<bool>,
-        is_scaled: Option<bool>,
+        foreground: u32,
+        background: u32,
+        alt: u32,
     ) -> Result<Text, Error> {
         let mut t = Text {
             buffer: vec![vec![]],
-            color,
             string,
             position,
             is_mut: is_mut.unwrap_or(false),
-            is_scaled: is_scaled.unwrap_or(false),
-            mut_pixel:vec![],
+            mut_pixel: vec![],
+            foreground,
+            background,
+            alt,
         };
 
         t.init_buffer()?;
@@ -91,9 +90,9 @@ impl Text {
     }
 
     fn init_buffer(&mut self) -> Result<(), Error> {
-        let b = 0x000000 as u32;
-        let t = 0xFFFFFF as u32;
-        let c = self.color;
+        let b = self.background;
+        let t = self.alt;
+        let c = self.foreground;
         for s in self.string.split("") {
             match s {
                 "0" => {
@@ -132,7 +131,6 @@ impl Text {
                         c, c, c, c, b, b, b, b, c, c, b, b, c, c, c, c, b, b, c, c, c, c, b,
                     ]);
                 }
-
                 "6" => {
                     self.buffer.push(vec![
                         b, c, c, c, c, b, b, c, b, b, b, b, b, c, b, b, b, b, b, c, c, c, c, b, b,

@@ -41,6 +41,9 @@ impl Coordinate {
             + (((realsize.0 * realsize.1) / 2) as i32)
             - (realsize.0 as i32 * posy);
 
+//        if index >= (realsize.0 * realsize.1) as i32 {
+//             index -= index - (realsize.0 * realsize.1) as i32 + 1;
+//        }
         Ok(Coordinate {
             cartesian: pos,
             index: index as u32,

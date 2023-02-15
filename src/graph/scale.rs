@@ -1,9 +1,11 @@
 use winit::dpi::PhysicalSize;
 
-use super::{
+use crate::graph::{
     coordinate::Coordinate,
-    drawable::{text::Text, Drawable},
+    draw::{text::Text, Drawable},
 };
+
+use super::color::Color;
 
 #[derive(Debug)]
 pub enum Orientation {
@@ -81,7 +83,7 @@ impl Scale {
         self.factor_y = self.height as f32 / self.current_interval_y as f32;
     }
 
-    pub fn draw(&self) -> Vec<u32> {
+    pub fn draw(&self, background_color: u32, foreground_color:u32) -> Vec<(u32, u32)> {
         let mut interval_texts = vec![];
         let width: u32 = self.width;
         let height: u32 = self.height;
@@ -103,8 +105,8 @@ impl Scale {
             let mut index_y = coord_y;
 
             for _ in 0..4 {
-                interval_texts.push(index_y);
-                interval_texts.push(index_x);
+                interval_texts.push((index_y, foreground_color));
+                interval_texts.push((index_x, foreground_color));
                 index_y += 1;
                 index_x += width;
             }
@@ -124,16 +126,31 @@ impl Scale {
                 let coord_text_y =
                     Coordinate::from_index((width, height), index_y - (3 * width)).unwrap();
 
-                let mut scale_text_x =
-                    Text::from(text_x, 0xFFFFFF as u32, coord_text_x, Some(true), None).unwrap();
-                let mut scale_text_y =
-                    Text::from(text_y, 0xFFFFFF as u32, coord_text_y, Some(true), None).unwrap();
+                let text_alt = Color::create_color(100,100,100).unwrap();
+                let mut scale_text_x = Text::from(
+                    text_x,
+                    coord_text_x,
+                    Some(true),
+                    foreground_color,
+                    background_color,
+                    text_alt
+                )
+                .unwrap();
+                let mut scale_text_y = Text::from(
+                    text_y,
+                    coord_text_y,
+                    Some(true),
+                    foreground_color,
+                    background_color,
+                    text_alt
+                )
+                .unwrap();
 
                 for index in scale_text_x.draw((self.width, self.height)) {
-                    interval_texts.push(index);
+                    interval_texts.push((index.0, index.1));
                 }
                 for index in scale_text_y.draw((self.width, self.height)) {
-                    interval_texts.push(index);
+                    interval_texts.push((index.0, index.1));
                 }
             }
         }

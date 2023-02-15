@@ -1,5 +1,5 @@
 mod graph;
-use graph::{Graph, drawable::{line::Line, text::Text}};
+use graph::{Graph, draw::{line::Line, text::Text}, color::Color};
 use softbuffer::GraphicsContext;
 use winit::{
     dpi::PhysicalPosition,
@@ -16,22 +16,22 @@ fn main() {
         .unwrap();
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
     let mut graphic = Graph::new();
-    graphic.scale.set_scale(20000.0, 10000.0);
+    graphic.background = 0x000000;
+    graphic.foreground = 0xFFFFFF;
+    graphic.scale.set_scale(2000.0, 800.0);
 
-    let red = 0xCC0000;
-    let green = 0x00CC00;
-    //let blue = 0x00000CC;
-    //    let purple = 0xCC000CC;
+    let red = Color::create_color(175,0,0).unwrap();
+    let green = Color::create_color(0,175,0).unwrap();
 
     let mut c_position: PhysicalPosition<f64> = PhysicalPosition::new(0.0, 0.0);
     let mut mouse_coords = (Text::_new(), Text::_new());
 
-    graphic.shapes.push(Box::new(Line::from((-500, -500), (500, -500), red, true)));
-    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, 500), red, true)));
-    graphic.shapes.push(Box::new(Line::from((-500, -500), (-500, 500), red, true)));
-    graphic.shapes.push(Box::new(Line::from((500, 500), (500, -500), red, true)));
-    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, -500), green, true)));
-    graphic.shapes.push(Box::new(Line::from((500, -500), (-500, 500), green, true)));
+    graphic.shapes.push(Box::new(Line::from((-500, -500), (500, -500), red, true, true)));
+    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, 500), red, true, true)));
+    graphic.shapes.push(Box::new(Line::from((-500, -500), (-500, 500), red, true, true)));
+    graphic.shapes.push(Box::new(Line::from((500, 500), (500, -500), red, true, true)));
+    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, -500), green, true, true)));
+    graphic.shapes.push(Box::new(Line::from((500, -500), (-500, 500), green, true, true)));
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -42,13 +42,14 @@ fn main() {
                 ..
             } => {
                 graphic.scale.set_size(window.inner_size());
-                graphic.fill_buffer(0x00 as u32, graphic.scale.width, graphic.scale.height);
+                graphic.fill_buffer(graphic.background , graphic.scale.width, graphic.scale.height);
                 graphic.mut_pixels = vec![];
             }
 
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 if graphic.scale.width == 0 {
                 } else {
+                    graphic.draw_shapes();
                     graphics_context.set_buffer(
                         &graphic.buffer,
                         graphic.scale.width as u16,
@@ -65,7 +66,6 @@ fn main() {
 
             Event::MainEventsCleared => {
                 if graphic.scale.width != 0 {
-                    graphic.clear_shapes();
                     graphic.draw_shapes();
                     graphic.draw_scale();
                     graphic.clear_shape(&mouse_coords.0);

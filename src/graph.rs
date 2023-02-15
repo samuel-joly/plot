@@ -1,14 +1,17 @@
+pub mod color;
 pub mod coordinate;
-pub mod drawable;
+pub mod draw;
 pub mod scale;
 
 use crate::graph::{
     coordinate::Coordinate,
-    drawable::{text::Text, Drawable},
+    draw::{text::Text, Drawable},
     scale::Scale,
 };
 
 use winit::dpi::PhysicalPosition;
+
+use self::color::Color;
 
 pub struct Graph {
     pub buffer: Vec<u32>,
@@ -16,6 +19,8 @@ pub struct Graph {
     pub scale: Scale,
     pub shapes: Vec<Box<dyn Drawable>>,
     pub mouse_text: (Text, Text),
+    pub background: u32,
+    pub foreground: u32,
 }
 
 impl Graph {
@@ -26,16 +31,28 @@ impl Graph {
             scale: Scale::new(),
             shapes: vec![],
             mouse_text: (Text::_new(), Text::_new()),
+            background: 0x000000,
+            foreground: 0xFFFFFF,
         }
     }
 
     pub fn draw_shapes(&mut self) {
-        self.clear_shapes();
         for shape in self.shapes.iter_mut() {
+            if shape.is_mut() {
+                for index in shape.get_mut_pixels() {
+                    drop(std::mem::replace(
+                        &mut self.buffer[index as usize],
+                        self.background,
+                    ));
+                }
+            }
+            if shape.is_scalable() {
+                shape.scale(&self.scale);
+            }
             for index in shape.draw((self.scale.width, self.scale.height)) {
                 drop(std::mem::replace(
-                    &mut self.buffer[index as usize],
-                    0xFFFFFF as u32,
+                    &mut self.buffer[index.0 as usize],
+                    index.1,
                 ));
             }
         }
@@ -45,21 +62,24 @@ impl Graph {
         if shape.is_mut() {
             self.clear_shape(shape);
         }
+        if shape.is_scalable() {
+            shape.scale(&self.scale);
+        }
         for index in shape.draw((self.scale.width, self.scale.height)) {
             drop(std::mem::replace(
-                &mut self.buffer[index as usize],
-                0xFFFFFF as u32,
+                &mut self.buffer[index.0 as usize],
+                index.1,
             ));
         }
     }
 
-    pub fn clear_shapes(&mut self) {
+    pub fn _clear_shapes(&mut self) {
         for shape in self.shapes.iter() {
             if shape.is_mut() {
                 for index in shape.get_mut_pixels() {
                     drop(std::mem::replace(
                         &mut self.buffer[index as usize],
-                        0x000000 as u32,
+                        self.background,
                     ));
                 }
             }
@@ -70,18 +90,18 @@ impl Graph {
         for index in shape.get_mut_pixels() {
             drop(std::mem::replace(
                 &mut self.buffer[index as usize],
-                0x000000 as u32,
+                self.background,
             ));
         }
     }
 
     pub fn draw_scale(&mut self) {
         self.clear_scale();
-        for index in self.scale.draw() {
-            self.mut_pixels.push(index);
+        for index in self.scale.draw(self.background, self.foreground) {
+            self.mut_pixels.push(index.0);
             drop(std::mem::replace(
-                &mut self.buffer[index as usize],
-                0xFFFFFF as u32,
+                &mut self.buffer[index.0 as usize],
+                index.1,
             ));
         }
     }
@@ -90,7 +110,7 @@ impl Graph {
         for index in &self.mut_pixels {
             drop(std::mem::replace(
                 &mut self.buffer[*index as usize],
-                0x000000 as u32,
+                self.background,
             ));
         }
         self.mut_pixels = vec![];
@@ -115,18 +135,18 @@ impl Graph {
             let y_index = (mouse_coord - (mouse_coord % self.scale.width)) + i;
             drop(std::mem::replace(
                 &mut self.buffer[x_index],
-                0xFFFFFF as u32,
+                self.foreground,
             ));
             drop(std::mem::replace(
                 &mut self.buffer[y_index as usize],
-                0xFFFFFF as u32,
+                self.foreground,
             ));
             self.mut_pixels.push(x_index as u32);
             self.mut_pixels.push(y_index as u32);
         }
     }
 
-    pub fn mouse_coordinates(&mut self, mouse_position: PhysicalPosition<f64>) -> (Text,Text) {
+    pub fn mouse_coordinates(&mut self, mouse_position: PhysicalPosition<f64>) -> (Text, Text) {
         let x = mouse_position.x as f32 - (self.scale.width / 2) as f32;
         let y = (self.scale.height / 2) as f32 - mouse_position.y as f32;
 
@@ -152,11 +172,26 @@ impl Graph {
         )
         .unwrap();
 
-        let mouse_txt_x =
-            Text::from(x_txt, 0x00CC00 as u32, x_coord,  Some(true), None).unwrap();
-        let mouse_txt_y = Text::from(y_txt, 0x00CC00 as u32, y_coord, Some(true), None).unwrap();
+        let mouse_txt_alt = Color::create_color(122, 122, 122).unwrap();
+        let mouse_txt_x = Text::from(
+            x_txt,
+            x_coord,
+            Some(true),
+            self.foreground,
+            self.background,
+            mouse_txt_alt,
+        )
+        .unwrap();
+        let mouse_txt_y = Text::from(
+            y_txt,
+            y_coord,
+            Some(true),
+            self.foreground,
+            self.background,
+            mouse_txt_alt,
+        )
+        .unwrap();
 
-        (mouse_txt_x,mouse_txt_y)
+        (mouse_txt_x, mouse_txt_y)
     }
-
 }
