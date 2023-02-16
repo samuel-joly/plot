@@ -18,7 +18,7 @@ pub struct Graph {
     pub mut_pixels: Vec<u32>,
     pub scale: Scale,
     pub shapes: Vec<Box<dyn Drawable>>,
-    pub mouse_text: (Text, Text),
+    pub mouse_text: (Box<dyn Drawable>, Box<dyn Drawable>),
     pub background: u32,
     pub foreground: u32,
 }
@@ -30,7 +30,7 @@ impl Graph {
             mut_pixels: vec![],
             scale: Scale::new(),
             shapes: vec![],
-            mouse_text: (Text::_new(), Text::_new()),
+            mouse_text: (Box::new(Text::new()), Box::new(Text::new())),
             background: 0x000000,
             foreground: 0xFFFFFF,
         }
@@ -58,43 +58,6 @@ impl Graph {
         }
     }
 
-    pub fn draw_shape(&mut self, shape: &mut impl Drawable) {
-        if shape.is_mut() {
-            self.clear_shape(shape);
-        }
-        if shape.is_scalable() {
-            shape.scale(&self.scale);
-        }
-        for index in shape.draw((self.scale.width, self.scale.height)) {
-            drop(std::mem::replace(
-                &mut self.buffer[index.0 as usize],
-                index.1,
-            ));
-        }
-    }
-
-    pub fn _clear_shapes(&mut self) {
-        for shape in self.shapes.iter() {
-            if shape.is_mut() {
-                for index in shape.get_mut_pixels() {
-                    drop(std::mem::replace(
-                        &mut self.buffer[index as usize],
-                        self.background,
-                    ));
-                }
-            }
-        }
-    }
-
-    pub fn clear_shape(&mut self, shape: &impl Drawable) {
-        for index in shape.get_mut_pixels() {
-            drop(std::mem::replace(
-                &mut self.buffer[index as usize],
-                self.background,
-            ));
-        }
-    }
-
     pub fn draw_scale(&mut self) {
         self.clear_scale();
         for index in self.scale.draw(self.background, self.foreground) {
@@ -116,8 +79,8 @@ impl Graph {
         self.mut_pixels = vec![];
     }
 
-    pub fn fill_buffer(&mut self, color: u32, width: u32, height: u32) {
-        self.buffer = (0..((width * height) as usize))
+    pub fn fill_buffer(&mut self, color: u32) {
+        self.buffer = (0..((self.scale.width * self.scale.height) as usize))
             .map(|_| color)
             .collect::<Vec<u32>>();
     }
@@ -146,7 +109,7 @@ impl Graph {
         }
     }
 
-    pub fn mouse_coordinates(&mut self, mouse_position: PhysicalPosition<f64>) -> (Text, Text) {
+    pub fn draw_mouse_coordinates(&mut self, mouse_position: PhysicalPosition<f64>) {
         let x = mouse_position.x as f32 - (self.scale.width / 2) as f32;
         let y = (self.scale.height / 2) as f32 - mouse_position.y as f32;
 
@@ -192,6 +155,14 @@ impl Graph {
         )
         .unwrap();
 
-        (mouse_txt_x, mouse_txt_y)
+        self.mouse_text = (Box::new(mouse_txt_x),Box::new(mouse_txt_y));
+        for (pixel, color) in self.mouse_text.0.draw((self.scale.width, self.scale.height)) {
+            self.mut_pixels.push(pixel);
+            drop(std::mem::replace(&mut self.buffer[pixel as usize], color));
+        }
+        for (pixel, color) in self.mouse_text.1.draw((self.scale.width, self.scale.height)) {
+            self.mut_pixels.push(pixel);
+            drop(std::mem::replace(&mut self.buffer[pixel as usize], color));
+        }
     }
 }

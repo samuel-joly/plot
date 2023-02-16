@@ -52,7 +52,7 @@ impl Drawable for Text {
 }
 
 impl Text {
-    pub fn _new() -> Text {
+    pub fn new() -> Text {
         Text {
             buffer: vec![vec![]],
             string: "".to_string(),

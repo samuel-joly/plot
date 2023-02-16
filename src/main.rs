@@ -1,5 +1,5 @@
 mod graph;
-use graph::{Graph, draw::{line::Line, text::Text}, color::Color};
+use graph::Graph;
 use softbuffer::GraphicsContext;
 use winit::{
     dpi::PhysicalPosition,
@@ -20,18 +20,7 @@ fn main() {
     graphic.foreground = 0xFFFFFF;
     graphic.scale.set_scale(2000.0, 800.0);
 
-    let red = Color::create_color(175,0,0).unwrap();
-    let green = Color::create_color(0,175,0).unwrap();
-
     let mut c_position: PhysicalPosition<f64> = PhysicalPosition::new(0.0, 0.0);
-    let mut mouse_coords = (Text::_new(), Text::_new());
-
-    graphic.shapes.push(Box::new(Line::from((-500, -500), (500, -500), red, true, true)));
-    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, 500), red, true, true)));
-    graphic.shapes.push(Box::new(Line::from((-500, -500), (-500, 500), red, true, true)));
-    graphic.shapes.push(Box::new(Line::from((500, 500), (500, -500), red, true, true)));
-    graphic.shapes.push(Box::new(Line::from((500, 500), (-500, -500), green, true, true)));
-    graphic.shapes.push(Box::new(Line::from((500, -500), (-500, 500), green, true, true)));
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -42,14 +31,13 @@ fn main() {
                 ..
             } => {
                 graphic.scale.set_size(window.inner_size());
-                graphic.fill_buffer(graphic.background , graphic.scale.width, graphic.scale.height);
+                graphic.fill_buffer(graphic.background);
                 graphic.mut_pixels = vec![];
             }
 
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 if graphic.scale.width == 0 {
                 } else {
-                    graphic.draw_shapes();
                     graphics_context.set_buffer(
                         &graphic.buffer,
                         graphic.scale.width as u16,
@@ -68,11 +56,7 @@ fn main() {
                 if graphic.scale.width != 0 {
                     graphic.draw_shapes();
                     graphic.draw_scale();
-                    graphic.clear_shape(&mouse_coords.0);
-                    graphic.clear_shape(&mouse_coords.1);
-                    mouse_coords = graphic.mouse_coordinates(c_position);
-                    graphic.draw_shape(&mut mouse_coords.0);
-                    graphic.draw_shape(&mut mouse_coords.1);
+                    graphic.draw_mouse_coordinates(c_position);
                     graphic.draw_mouse_axis(c_position);
                 }
             }
