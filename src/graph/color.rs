@@ -1,7 +1,6 @@
 use std::io::Error;
 
-pub struct Color {
-}
+pub struct Color {}
 
 impl Color {
     pub fn create_color(red: u32, green: u32, blue: u32) -> Result<u32, Error> {

@@ -155,12 +155,20 @@ impl Graph {
         )
         .unwrap();
 
-        self.mouse_text = (Box::new(mouse_txt_x),Box::new(mouse_txt_y));
-        for (pixel, color) in self.mouse_text.0.draw((self.scale.width, self.scale.height)) {
+        self.mouse_text = (Box::new(mouse_txt_x), Box::new(mouse_txt_y));
+        for (pixel, color) in self
+            .mouse_text
+            .0
+            .draw((self.scale.width, self.scale.height))
+        {
             self.mut_pixels.push(pixel);
             drop(std::mem::replace(&mut self.buffer[pixel as usize], color));
         }
-        for (pixel, color) in self.mouse_text.1.draw((self.scale.width, self.scale.height)) {
+        for (pixel, color) in self
+            .mouse_text
+            .1
+            .draw((self.scale.width, self.scale.height))
+        {
             self.mut_pixels.push(pixel);
             drop(std::mem::replace(&mut self.buffer[pixel as usize], color));
         }

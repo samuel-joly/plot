@@ -10,15 +10,15 @@ pub struct Text {
     pub position: Coordinate,
     pub is_mut: bool,
     pub mut_pixel: Vec<u32>,
-    pub foreground:u32,
-    pub background:u32,
-    pub alt:u32,
+    pub foreground: u32,
+    pub background: u32,
+    pub alt: u32,
 }
 
 impl Drawable for Text {
     fn draw(&mut self, size: (u32, u32)) -> Vec<(u32, u32)> {
         let mut symbol_count = 0;
-        let mut ret:Vec<(u32,u32)> = vec![];
+        let mut ret: Vec<(u32, u32)> = vec![];
         let start_index = self.position.get_index();
         for symbol in &self.buffer {
             let mut index = start_index + (symbol_count * 9);

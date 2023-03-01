@@ -11,7 +11,7 @@ use winit::{
 fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
-        .with_title("Plot 0.1")
+        .with_title("Plot 0.9")
         .build(&event_loop)
         .unwrap();
     let mut graphics_context = unsafe { GraphicsContext::new(&window, &window) }.unwrap();
@@ -84,7 +84,7 @@ fn main() {
                                     + (graphic.scale.original_interval_y * 0.2).floor(),
                             );
                         }
-                        for l in graphic.shapes.iter_mut(){
+                        for l in graphic.shapes.iter_mut() {
                             if l.is_scalable() {
                                 if l.is_scaled() {
                                     l.set_is_scaled(false);

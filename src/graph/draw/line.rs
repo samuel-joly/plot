@@ -125,7 +125,7 @@ impl Drawable for Line {
         }
     }
 
-    fn set_is_scaled(&mut self, is_scaled:bool) {
+    fn set_is_scaled(&mut self, is_scaled: bool) {
         self.scaled = is_scaled;
     }
 }
