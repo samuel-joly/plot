@@ -36,6 +36,10 @@ impl Graph {
         }
     }
 
+    pub fn clear_mut_pixels(&mut self) {
+        self.mut_pixels = vec![];
+    }
+
     pub fn draw_shapes(&mut self) {
         for shape in self.shapes.iter_mut() {
             if shape.is_mut() {
@@ -69,6 +73,15 @@ impl Graph {
         }
     }
 
+    pub fn draw_points(&mut self, points: &Vec<u32>) {
+        for point in points {
+            drop(std::mem::replace(
+                &mut self.buffer[*point as usize],
+                Color::create_color(0, 250, 0).unwrap(),
+            ))
+        }
+    }
+
     pub fn clear_scale(&mut self) {
         for index in &self.mut_pixels {
             drop(std::mem::replace(
@@ -83,6 +96,7 @@ impl Graph {
         self.buffer = (0..((self.scale.width * self.scale.height) as usize))
             .map(|_| color)
             .collect::<Vec<u32>>();
+        self.clear_mut_pixels();
     }
 
     pub fn draw_mouse_axis(&mut self, mouse_position: PhysicalPosition<f64>) -> () {
