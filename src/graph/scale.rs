@@ -106,8 +106,64 @@ impl Scale {
     }
 
     fn set_scale_factor(&mut self) {
+        if self.height % 2 != 0 {
+            self.height += 1;
+        }
+        if self.width % 2 != 0 {
+            self.width += 1;
+        }
         self.factor_x = self.width as f32 / self.current_interval_x as f32;
         self.factor_y = self.height as f32 / self.current_interval_y as f32;
+    }
+
+    pub fn draw(&self, background_color: u32, foreground_color: u32) -> Vec<(u32, u32)> {
+        let mut interval_texts = vec![];
+        let width: u32 = self.width;
+        let height: u32 = self.height;
+        match self.position {
+            Position::Centered => {
+                for i in 0..height {
+                    interval_texts.push(((width / 2) + width * i, foreground_color));
+                }
+                for i in 0..width {
+                    interval_texts.push((((height * width) / 2) + i, foreground_color));
+                }
+            }
+            _ => {}
+        }
+
+        for i in 1..10 {
+            let mut coord_y = i * ((height as f32 / 10.0) * width as f32).floor() as u32;
+            // Weird equalization of y axis, element shift by an unindentified value each increment
+            coord_y -= coord_y % width;
+            coord_y += width;
+            let mut coord_x = (i * (width / 10)) as u32;
+
+            match self.position {
+                Position::Centered => {
+                    coord_x += (height / 2) * width;
+                    coord_y += width / 2;
+                }
+                Position::LeftTop => {}
+                Position::RightBottom => {
+                    coord_x = (height * width) - coord_x;
+                    coord_y += width - 1;
+                }
+            }
+
+            self.draw_interval(coord_x, coord_y, &mut interval_texts, foreground_color);
+
+            if i % 2 == 0 {
+                self.draw_interval_text(
+                    coord_x,
+                    coord_y,
+                    foreground_color,
+                    background_color,
+                    &mut interval_texts,
+                );
+            }
+        }
+        interval_texts
     }
 
     pub fn draw_interval(
@@ -195,55 +251,5 @@ impl Scale {
         for index in scale_text_y.draw((self.width, self.height)) {
             interval_texts.push((index.0, index.1));
         }
-    }
-
-    pub fn draw(&self, background_color: u32, foreground_color: u32) -> Vec<(u32, u32)> {
-        let mut interval_texts = vec![];
-        let width: u32 = self.width;
-        let height: u32 = self.height;
-        match self.position {
-            Position::Centered => {
-                for i in 0..height {
-                    interval_texts.push(((width / 2) + width * i, foreground_color));
-                }
-                for i in 0..width {
-                    interval_texts.push((((height * width) / 2) + i, foreground_color));
-                }
-            }
-            _ => {}
-        }
-
-        for i in 1..10 {
-            let mut coord_y = i * ((height as f32 / 10.0) * width as f32).floor() as u32;
-            // Weird equalization of y axis, element shift by an unindentified value each increment
-            coord_y -= coord_y % width;
-            coord_y += width;
-            let mut coord_x = (i * (width / 10)) as u32;
-
-            match self.position {
-                Position::Centered => {
-                    coord_x += (height / 2) * width;
-                    coord_y += width / 2;
-                }
-                Position::LeftTop => {}
-                Position::RightBottom => {
-                    coord_x = (height * width) - coord_x;
-                    coord_y += width - 1;
-                }
-            }
-
-            self.draw_interval(coord_x, coord_y, &mut interval_texts, foreground_color);
-
-            if i % 2 == 0 {
-                self.draw_interval_text(
-                    coord_x,
-                    coord_y,
-                    foreground_color,
-                    background_color,
-                    &mut interval_texts,
-                );
-            }
-        }
-        interval_texts
     }
 }
