@@ -1,5 +1,5 @@
 mod graph;
-use graph::Graph;
+use graph::{coordinate::Coordinate, Graph};
 use softbuffer::GraphicsContext;
 use winit::{
     dpi::PhysicalPosition,
@@ -7,6 +7,26 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
+
+fn courbe(width: u32, height: u32) -> Vec<u32> {
+    let mut dots: Vec<u32> = vec![];
+    let mut data: f64;
+    let mut val: f64;
+    for i in 0..2000 {
+        val = -1.0 + (i as f64 / 1000.0);
+        if i != 0 {
+            data = val.cos();
+        } else {
+            continue;
+        }
+        dots.push(
+            Coordinate::from_pos((width, height), ((val *100.0) as i32 , (data*100.0) as i32))
+                .unwrap()
+                .get_index(),
+        );
+    }
+    dots
+}
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -18,13 +38,12 @@ fn main() {
     let mut graphic = Graph::new();
     graphic.background = 0x000000;
     graphic.foreground = 0xFFFFFF;
-    graphic.scale.set_scale(2000.0, 800.0);
+    graphic.scale.set_scale(2.0, 4.0);
 
     let mut c_position: PhysicalPosition<f64> = PhysicalPosition::new(0.0, 0.0);
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
-
         match event {
             Event::WindowEvent {
                 event: WindowEvent::Resized(..),
@@ -32,7 +51,6 @@ fn main() {
             } => {
                 graphic.scale.set_size(window.inner_size());
                 graphic.fill_buffer(graphic.background);
-                graphic.mut_pixels = vec![];
             }
 
             Event::RedrawRequested(window_id) if window_id == window.id() => {
@@ -56,6 +74,10 @@ fn main() {
                 if graphic.scale.width != 0 {
                     graphic.draw_shapes();
                     graphic.draw_scale();
+                    graphic.draw_points(&courbe(
+                        window.inner_size().width,
+                        window.inner_size().height,
+                    ));
                     graphic.draw_mouse_coordinates(c_position);
                     graphic.draw_mouse_axis(c_position);
                 }
