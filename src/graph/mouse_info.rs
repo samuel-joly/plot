@@ -19,6 +19,7 @@ impl Mouse {
     }
 
     pub fn draw_mouse_axis(&mut self, scale: &Scale) {
+        self.axis_pixels = vec![];
         let x = self.position.x as i32 - (scale.width as i32 / 2);
         let y = (scale.height / 2) as i32 - self.position.y as i32;
         let mouse_coord = Coordinate::from_pos((scale.width, scale.height), (x, y))
@@ -34,6 +35,7 @@ impl Mouse {
     }
 
     pub fn draw_mouse_position(&mut self, scale: &Scale, font: &FontRef, font_size: f32) {
+        self.position_pixels = vec![];
         let x = self.position.x as f32 - (scale.width / 2) as f32;
         let y = (scale.height / 2) as f32 - self.position.y as f32;
 

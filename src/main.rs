@@ -42,6 +42,7 @@ fn main() {
                 } else {
                     graphic.draw_points(&courb);
                     graphic.draw_scale();
+                    graphic.draw_mouse_info();
                     graphics_context.set_buffer(
                         &graphic.buffer,
                         graphic.scale.width as u16,
