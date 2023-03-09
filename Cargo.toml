@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ab_glyph = "0.2.20"
 softbuffer = "0.2.0"
 winit = "0.27.5"

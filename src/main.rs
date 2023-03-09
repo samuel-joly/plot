@@ -2,31 +2,10 @@ mod graph;
 use graph::{coordinate::Coordinate, Graph};
 use softbuffer::GraphicsContext;
 use winit::{
-    dpi::PhysicalPosition,
     event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
-
-fn courbe(width: u32, height: u32) -> Vec<u32> {
-    let mut dots: Vec<u32> = vec![];
-    let mut data: f64;
-    let mut val: f64;
-    for i in 0..2000 {
-        val = -1.0 + (i as f64 / 1000.0);
-        if i != 0 {
-            data = val.cos();
-        } else {
-            continue;
-        }
-        dots.push(
-            Coordinate::from_pos((width, height), ((val *100.0) as i32 , (data*100.0) as i32))
-                .unwrap()
-                .get_index(),
-        );
-    }
-    dots
-}
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -38,10 +17,9 @@ fn main() {
     let mut graphic = Graph::new();
     graphic.background = 0x000000;
     graphic.foreground = 0xFFFFFF;
-    graphic.scale.set_scale(2.0, 4.0);
+    graphic.scale.set_scale(10.0, 4.0);
 
-    let mut c_position: PhysicalPosition<f64> = PhysicalPosition::new(0.0, 0.0);
-
+    let mut courb: Vec<u32> = vec![];
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
         match event {
@@ -49,6 +27,12 @@ fn main() {
                 event: WindowEvent::Resized(..),
                 ..
             } => {
+                courb = courbe(
+                    window.inner_size().width,
+                    window.inner_size().height,
+                    graphic.scale.factor_x,
+                    graphic.scale.factor_y,
+                );
                 graphic.scale.set_size(window.inner_size());
                 graphic.fill_buffer(graphic.background);
             }
@@ -56,11 +40,17 @@ fn main() {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 if graphic.scale.width == 0 {
                 } else {
+                    graphic.draw_points(&courb);
+                    graphic.draw_scale();
                     graphics_context.set_buffer(
                         &graphic.buffer,
                         graphic.scale.width as u16,
                         graphic.scale.height as u16,
                     );
+                }
+            }
+            Event::MainEventsCleared => {
+                if graphic.scale.width != 0 {
                 }
             }
             Event::WindowEvent {
@@ -70,53 +60,37 @@ fn main() {
                 *control_flow = ControlFlow::Exit;
             }
 
-            Event::MainEventsCleared => {
-                if graphic.scale.width != 0 {
-                    graphic.draw_shapes();
-                    graphic.draw_scale();
-                    graphic.draw_points(&courbe(
-                        window.inner_size().width,
-                        window.inner_size().height,
-                    ));
-                    graphic.draw_mouse_coordinates(c_position);
-                    graphic.draw_mouse_axis(c_position);
-                }
-            }
             Event::DeviceEvent {
                 event: DeviceEvent::MouseWheel { delta },
                 ..
-            } => {
-                match delta {
-                    winit::event::MouseScrollDelta::PixelDelta(p) => {
-                        dbg!(p);
-                    }
-                    winit::event::MouseScrollDelta::LineDelta(_x, y) => {
-                        if y < 0.0 {
-                            graphic.scale.set_scale(
-                                graphic.scale.current_interval_x.floor()
-                                    - (graphic.scale.original_interval_x * 0.2).floor(),
-                                graphic.scale.current_interval_y.floor()
-                                    - (graphic.scale.original_interval_y * 0.2).floor(),
-                            );
-                        } else {
-                            graphic.scale.set_scale(
-                                graphic.scale.current_interval_x.floor()
-                                    + (graphic.scale.original_interval_x * 0.2).floor(),
-                                graphic.scale.current_interval_y.floor()
-                                    + (graphic.scale.original_interval_y * 0.2).floor(),
-                            );
-                        }
-                        for l in graphic.shapes.iter_mut() {
-                            if l.is_scalable() {
-                                if l.is_scaled() {
-                                    l.set_is_scaled(false);
-                                }
-                            }
-                        }
-                    }
+            } => match delta {
+                winit::event::MouseScrollDelta::PixelDelta(p) => {
+                    dbg!(p);
                 }
-                window.request_redraw();
-            }
+                winit::event::MouseScrollDelta::LineDelta(_x, y) => {
+                    if y < 0.0 {
+                        graphic.scale.set_scale(
+                            graphic.scale.current_interval_x.floor()
+                                - (graphic.scale.original_interval_x * 0.2).floor(),
+                            graphic.scale.current_interval_y.floor()
+                                - (graphic.scale.original_interval_y * 0.2).floor(),
+                        );
+                    } else {
+                        graphic.scale.set_scale(
+                            graphic.scale.current_interval_x.floor()
+                                + (graphic.scale.original_interval_x * 0.2).floor(),
+                            graphic.scale.current_interval_y.floor()
+                                + (graphic.scale.original_interval_y * 0.2).floor(),
+                        );
+                    }
+                    for l in graphic.shapes.iter_mut() {
+                        if l.is_scalable() && l.is_scaled() {
+                            l.set_is_scaled(false);
+                        }
+                    }
+                    window.request_redraw();
+                }
+            },
 
             Event::WindowEvent {
                 event: WindowEvent::MouseInput { state, button, .. },
@@ -132,11 +106,37 @@ fn main() {
                 event: WindowEvent::CursorMoved { position, .. },
                 ..
             } => {
-                c_position = position;
+                graphic.mouse.position = position;
                 window.request_redraw();
             }
 
             _ => {}
         }
     });
+}
+
+fn courbe(width: u32, height: u32, scale_x: f32, scale_y: f32) -> Vec<u32> {
+    let mut dots: Vec<u32> = vec![];
+    let mut data: f64;
+    let mut val: f64;
+    for i in 0..100 {
+        val = -5.0 + (i as f64 /50.0);
+        if i != 0 {
+            data = val.cos();
+        } else {
+            continue;
+        }
+        dots.push(
+            Coordinate::from_pos(
+                (width, height),
+                (
+                    (val * scale_x as f64) as i32,
+                    (data * scale_y as f64) as i32,
+                ),
+            )
+            .unwrap()
+            .get_index(),
+        );
+    }
+    dots
 }

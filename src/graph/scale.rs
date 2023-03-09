@@ -1,11 +1,7 @@
+use ab_glyph::FontRef;
 use winit::dpi::PhysicalSize;
 
-use crate::graph::{
-    coordinate::Coordinate,
-    draw::{text::Text, Drawable},
-};
-
-use super::color::Color;
+use crate::graph::{coordinate::Coordinate, draw::text::Text};
 
 #[derive(Debug)]
 pub enum Orientation {
@@ -44,6 +40,8 @@ pub struct Scale {
     pub orientation: Orientation,
     pub position: Position,
     pub display: Display,
+
+    pub mut_pixels: Vec<u32>,
 }
 
 impl Scale {
@@ -60,6 +58,7 @@ impl Scale {
             orientation: Orientation::Even,
             position: Position::Centered,
             display: Display::Absolute,
+            mut_pixels: vec![],
         }
     }
 
@@ -84,6 +83,7 @@ impl Scale {
             orientation,
             position,
             display,
+            mut_pixels: vec![],
         };
         sc
     }
@@ -116,7 +116,7 @@ impl Scale {
         self.factor_y = self.height as f32 / self.current_interval_y as f32;
     }
 
-    pub fn draw(&self, background_color: u32, foreground_color: u32) -> Vec<(u32, u32)> {
+    pub fn draw(&mut self, foreground_color: u32, font: &FontRef) -> Vec<(u32, u32)> {
         let mut interval_texts = vec![];
         let width: u32 = self.width;
         let height: u32 = self.height;
@@ -152,15 +152,8 @@ impl Scale {
             }
 
             self.draw_interval(coord_x, coord_y, &mut interval_texts, foreground_color);
-
             if i % 2 == 0 {
-                self.draw_interval_text(
-                    coord_x,
-                    coord_y,
-                    foreground_color,
-                    background_color,
-                    &mut interval_texts,
-                );
+                self.draw_interval_text(coord_x, coord_y, &mut interval_texts, font);
             }
         }
         interval_texts
@@ -168,36 +161,33 @@ impl Scale {
 
     pub fn draw_interval(
         &self,
-        index_x: u32,
-        index_y: u32,
+        mut index_x: u32,
+        mut index_y: u32,
         interval_texts: &mut Vec<(u32, u32)>,
         foreground_color: u32,
     ) {
-        let mut coord_x = index_x;
-        let mut coord_y = index_y;
         for _ in 0..9 {
-            interval_texts.push((coord_y - 4, foreground_color));
-            interval_texts.push((coord_x - (4 * self.width), foreground_color));
+            interval_texts.push((index_y - 4, foreground_color));
+            interval_texts.push((index_x - (4 * self.width), foreground_color));
             match self.position {
                 Position::RightBottom => {
-                    coord_y -= 1;
-                    coord_x -= self.width;
+                    index_y -= 1;
+                    index_x -= self.width;
                 }
                 _ => {
-                    coord_y += 1;
-                    coord_x += self.width;
+                    index_y += 1;
+                    index_x += self.width;
                 }
             };
         }
     }
 
     pub fn draw_interval_text(
-        &self,
+        &mut self,
         coord_x: u32,
         coord_y: u32,
-        foreground_color: u32,
-        background_color: u32,
         interval_texts: &mut Vec<(u32, u32)>,
+        font: &FontRef,
     ) {
         let line_x = Coordinate::from_index((self.width, self.height), coord_x)
             .unwrap()
@@ -210,7 +200,7 @@ impl Scale {
         let text_y = (f32::trunc((-line_y.1 as f32 / self.factor_y) * 100.0) / 100.0).to_string();
 
         let mut ctx = coord_x - (6 * text_x.len() as u32);
-        let mut cty = coord_y - 3 * self.width;
+        let mut cty = coord_y - 3 * self.width + 10;
 
         match self.position {
             Position::RightBottom => {
@@ -223,33 +213,18 @@ impl Scale {
         }
 
         let coord_text_x = Coordinate::from_index((self.width, self.height), ctx).unwrap();
+        let mut scale_text_x = Text::from(text_x, coord_text_x, Some(true)).unwrap();
+
         let coord_text_y = Coordinate::from_index((self.width, self.height), cty).unwrap();
+        let mut scale_text_y = Text::from(text_y, coord_text_y, Some(true)).unwrap();
 
-        let text_alt = Color::create_color(100, 100, 100).unwrap();
-        let mut scale_text_x = Text::from(
-            text_x,
-            coord_text_x,
-            Some(true),
-            foreground_color,
-            background_color,
-            text_alt,
-        )
-        .unwrap();
-        let mut scale_text_y = Text::from(
-            text_y,
-            coord_text_y,
-            Some(true),
-            foreground_color,
-            background_color,
-            text_alt,
-        )
-        .unwrap();
-
-        for index in scale_text_x.draw((self.width, self.height)) {
+        for index in scale_text_x.draw((self.width, self.height), 17.0, font) {
             interval_texts.push((index.0, index.1));
+            self.mut_pixels.push(index.0);
         }
-        for index in scale_text_y.draw((self.width, self.height)) {
+        for index in scale_text_y.draw((self.width, self.height), 17.0, font) {
             interval_texts.push((index.0, index.1));
+            self.mut_pixels.push(index.0);
         }
     }
 }

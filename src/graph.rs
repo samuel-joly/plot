@@ -1,46 +1,55 @@
 pub mod color;
 pub mod coordinate;
 pub mod draw;
+pub mod mouse_info;
 pub mod scale;
 
-use crate::graph::{
-    coordinate::Coordinate,
-    draw::{text::Text, Drawable},
-    scale::Scale,
-};
+use crate::graph::{draw::Drawable, mouse_info::Mouse, scale::Scale};
 
-use winit::dpi::PhysicalPosition;
+use ab_glyph::FontRef;
 
 use self::color::Color;
 
-pub struct Graph {
+pub struct Graph<'a> {
     pub buffer: Vec<u32>,
     pub mut_pixels: Vec<u32>,
     pub scale: Scale,
     pub shapes: Vec<Box<dyn Drawable>>,
-    pub mouse_text: (Box<dyn Drawable>, Box<dyn Drawable>),
     pub background: u32,
     pub foreground: u32,
+    pub font: FontRef<'a>,
+    pub mouse: Mouse,
 }
 
-impl Graph {
-    pub fn new() -> Graph {
+impl<'a> Graph<'a> {
+    pub fn new() -> Graph<'a> {
         Graph {
             buffer: Vec::new(),
             mut_pixels: vec![],
             scale: Scale::new(),
             shapes: vec![],
-            mouse_text: (Box::new(Text::new()), Box::new(Text::new())),
             background: 0x000000,
             foreground: 0xFFFFFF,
+            font: FontRef::try_from_slice(include_bytes!(
+                "/home/azefortwo/.local/share/fonts/LibreBaskerville-Italic.otf"
+            ))
+            .unwrap(),
+            mouse: Mouse::new(),
         }
+    }
+
+    pub fn fill_buffer(&mut self, color: u32) {
+        self.buffer = (0..((self.scale.width * self.scale.height) as usize))
+            .map(|_| color)
+            .collect::<Vec<u32>>();
+        self.clear_mut_pixels();
     }
 
     pub fn clear_mut_pixels(&mut self) {
         self.mut_pixels = vec![];
     }
 
-    pub fn draw_shapes(&mut self) {
+    pub fn _draw_shapes(&mut self) {
         for shape in self.shapes.iter_mut() {
             if shape.is_mut() {
                 for index in shape.get_mut_pixels() {
@@ -62,129 +71,58 @@ impl Graph {
         }
     }
 
-    pub fn draw_scale(&mut self) {
-        self.clear_scale();
-        for index in self.scale.draw(self.background, self.foreground) {
-            self.mut_pixels.push(index.0);
-            drop(std::mem::replace(
-                &mut self.buffer[index.0 as usize],
-                index.1,
-            ));
-        }
-    }
-
     pub fn draw_points(&mut self, points: &Vec<u32>) {
         for point in points {
             drop(std::mem::replace(
                 &mut self.buffer[*point as usize],
-                Color::create_color(0, 250, 0).unwrap(),
-            ))
+                Color::create_color(0, 255, 0).unwrap(),
+            ));
         }
     }
 
-    pub fn clear_scale(&mut self) {
-        for index in &self.mut_pixels {
+    pub fn draw_mouse_info(&mut self) {
+        for (pix, _) in &self.mouse.position_pixels {
+            drop(std::mem::replace(
+                &mut self.buffer[*pix as usize],
+                self.background,
+            ));
+        }
+        for pix in &self.mouse.axis_pixels {
+            drop(std::mem::replace(
+                &mut self.buffer[*pix as usize],
+                self.background,
+            ));
+        }
+
+        self.mouse
+            .draw_mouse_position(&self.scale, &self.font, 15.0);
+        self.mouse.draw_mouse_axis(&self.scale);
+
+        for (pix, color) in &self.mouse.position_pixels {
+            drop(std::mem::replace(&mut self.buffer[*pix as usize], *color));
+        }
+        for pix in &self.mouse.axis_pixels {
+            drop(std::mem::replace(
+                &mut self.buffer[*pix as usize],
+                self.foreground,
+            ));
+        }
+    }
+
+    pub fn draw_scale(&mut self) {
+        for index in &self.scale.mut_pixels {
             drop(std::mem::replace(
                 &mut self.buffer[*index as usize],
                 self.background,
             ));
         }
-        self.mut_pixels = vec![];
-    }
-
-    pub fn fill_buffer(&mut self, color: u32) {
-        self.buffer = (0..((self.scale.width * self.scale.height) as usize))
-            .map(|_| color)
-            .collect::<Vec<u32>>();
-        self.clear_mut_pixels();
-    }
-
-    pub fn draw_mouse_axis(&mut self, mouse_position: PhysicalPosition<f64>) -> () {
-        let x = mouse_position.x as i32 - (self.scale.width as i32 / 2);
-        let y = (self.scale.height / 2) as i32 - mouse_position.y as i32;
-        let mouse_coord = Coordinate::from_pos((self.scale.width, self.scale.height), (x, y))
-            .unwrap()
-            .get_index();
-
-        for i in 0..20 {
-            let x_index =
-                ((mouse_coord % self.scale.width) + (i * self.scale.width as u32)) as usize;
-            let y_index = (mouse_coord - (mouse_coord % self.scale.width)) + i;
+        self.scale.mut_pixels = vec![];
+        for index in self.scale.draw(self.foreground, &self.font) {
+            self.mut_pixels.push(index.0);
             drop(std::mem::replace(
-                &mut self.buffer[x_index],
-                self.foreground,
+                &mut self.buffer[index.0 as usize],
+                index.1,
             ));
-            drop(std::mem::replace(
-                &mut self.buffer[y_index as usize],
-                self.foreground,
-            ));
-            self.mut_pixels.push(x_index as u32);
-            self.mut_pixels.push(y_index as u32);
-        }
-    }
-
-    pub fn draw_mouse_coordinates(&mut self, mouse_position: PhysicalPosition<f64>) {
-        let x = mouse_position.x as f32 - (self.scale.width / 2) as f32;
-        let y = (self.scale.height / 2) as f32 - mouse_position.y as f32;
-
-        let x_txt = format!(
-            "x:{}",
-            f32::trunc((x as f32 / self.scale.factor_x) * 100.0) / 100.0
-        )
-        .to_string();
-        let y_txt = format!(
-            "y:{}",
-            f32::trunc((y as f32 / self.scale.factor_y) * 100.0) / 100.0
-        )
-        .to_string();
-
-        let x_coord = Coordinate::from_pos(
-            (self.scale.width, self.scale.height),
-            ((x.floor() as i32 + 3), (y.floor() as i32) + 26),
-        )
-        .unwrap();
-        let y_coord = Coordinate::from_pos(
-            (self.scale.width, self.scale.height),
-            ((x.floor() as i32) + 3, (y.floor() as i32) + 10),
-        )
-        .unwrap();
-
-        let mouse_txt_alt = Color::create_color(122, 122, 122).unwrap();
-        let mouse_txt_x = Text::from(
-            x_txt,
-            x_coord,
-            Some(true),
-            self.foreground,
-            self.background,
-            mouse_txt_alt,
-        )
-        .unwrap();
-        let mouse_txt_y = Text::from(
-            y_txt,
-            y_coord,
-            Some(true),
-            self.foreground,
-            self.background,
-            mouse_txt_alt,
-        )
-        .unwrap();
-
-        self.mouse_text = (Box::new(mouse_txt_x), Box::new(mouse_txt_y));
-        for (pixel, color) in self
-            .mouse_text
-            .0
-            .draw((self.scale.width, self.scale.height))
-        {
-            self.mut_pixels.push(pixel);
-            drop(std::mem::replace(&mut self.buffer[pixel as usize], color));
-        }
-        for (pixel, color) in self
-            .mouse_text
-            .1
-            .draw((self.scale.width, self.scale.height))
-        {
-            self.mut_pixels.push(pixel);
-            drop(std::mem::replace(&mut self.buffer[pixel as usize], color));
         }
     }
 }
