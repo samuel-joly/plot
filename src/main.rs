@@ -1,8 +1,8 @@
 mod graph;
-use graph::{coordinate::Coordinate, Graph};
+use graph::{coordinate::Coordinate, draw::circle::Circle, Graph};
 use softbuffer::GraphicsContext;
 use winit::{
-    event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent},
+    event::{DeviceEvent, Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
@@ -17,9 +17,10 @@ fn main() {
     let mut graphic = Graph::new();
     graphic.background = 0x000000;
     graphic.foreground = 0xFFFFFF;
-    graphic.scale.set_scale(10.0, 4.0);
+    graphic.scale.set_scale(1000.0, 400.0);
+    let circle = Circle::from(100, Coordinate::new(), true);
+    graphic.shapes = vec![Box::new(circle)];
 
-    let mut courb: Vec<u32> = vec![];
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
         match event {
@@ -27,12 +28,6 @@ fn main() {
                 event: WindowEvent::Resized(..),
                 ..
             } => {
-                courb = courbe(
-                    window.inner_size().width,
-                    window.inner_size().height,
-                    graphic.scale.factor_x,
-                    graphic.scale.factor_y,
-                );
                 graphic.scale.set_size(window.inner_size());
                 graphic.fill_buffer(graphic.background);
             }
@@ -40,7 +35,7 @@ fn main() {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 if graphic.scale.width == 0 {
                 } else {
-                    graphic.draw_points(&courb);
+                    graphic.draw_shapes();
                     graphic.draw_scale();
                     graphic.draw_mouse_info();
                     graphics_context.set_buffer(
@@ -50,10 +45,7 @@ fn main() {
                     );
                 }
             }
-            Event::MainEventsCleared => {
-                if graphic.scale.width != 0 {
-                }
-            }
+            Event::MainEventsCleared => if graphic.scale.width != 0 {},
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 window_id,
@@ -94,13 +86,13 @@ fn main() {
             },
 
             Event::WindowEvent {
-                event: WindowEvent::MouseInput { state, button, .. },
+                event: WindowEvent::MouseInput { .. },
                 ..
             } => {
-                if state == ElementState::Pressed && button == MouseButton::Left {
-                } else if state == ElementState::Pressed && button == MouseButton::Right {
-                } else {
-                }
+                //                if state == ElementState::Pressed && button == MouseButton::Left {
+                //                } else if state == ElementState::Pressed && button == MouseButton::Right {
+                //                } else {
+                //                }
             }
 
             Event::WindowEvent {
@@ -116,12 +108,12 @@ fn main() {
     });
 }
 
-fn courbe(width: u32, height: u32, scale_x: f32, scale_y: f32) -> Vec<u32> {
+fn _courbe(width: u32, height: u32, scale_x: f32, scale_y: f32) -> Vec<u32> {
     let mut dots: Vec<u32> = vec![];
     let mut data: f64;
     let mut val: f64;
     for i in 0..100 {
-        val = -5.0 + (i as f64 /50.0);
+        val = -5.0 + (i as f64 / 50.0);
         if i != 0 {
             data = val.cos();
         } else {

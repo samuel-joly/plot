@@ -8,7 +8,7 @@ use crate::graph::{draw::Drawable, mouse_info::Mouse, scale::Scale};
 
 use ab_glyph::FontRef;
 
-use self::color::Color;
+use self::{color::Color, draw::text::TextCompiler};
 
 pub struct Graph<'a> {
     pub buffer: Vec<u32>,
@@ -17,12 +17,18 @@ pub struct Graph<'a> {
     pub shapes: Vec<Box<dyn Drawable>>,
     pub background: u32,
     pub foreground: u32,
-    pub font: FontRef<'a>,
+    pub font: TextCompiler<'a>,
     pub mouse: Mouse,
 }
 
 impl<'a> Graph<'a> {
     pub fn new() -> Graph<'a> {
+        let font_ref = FontRef::try_from_slice(include_bytes!(
+            "/home/azefortwo/.local/share/fonts/LibreBaskerville-Italic.otf"
+        ))
+        .unwrap();
+        let font = TextCompiler::from(font_ref, 17.0);
+
         Graph {
             buffer: Vec::new(),
             mut_pixels: vec![],
@@ -30,10 +36,7 @@ impl<'a> Graph<'a> {
             shapes: vec![],
             background: 0x000000,
             foreground: 0xFFFFFF,
-            font: FontRef::try_from_slice(include_bytes!(
-                "/home/azefortwo/.local/share/fonts/LibreBaskerville-Italic.otf"
-            ))
-            .unwrap(),
+            font,
             mouse: Mouse::new(),
         }
     }
@@ -49,7 +52,7 @@ impl<'a> Graph<'a> {
         self.mut_pixels = vec![];
     }
 
-    pub fn _draw_shapes(&mut self) {
+    pub fn draw_shapes(&mut self) {
         for shape in self.shapes.iter_mut() {
             if shape.is_mut() {
                 for index in shape.get_mut_pixels() {
@@ -95,7 +98,7 @@ impl<'a> Graph<'a> {
         }
 
         self.mouse
-            .draw_mouse_position(&self.scale, &self.font, 15.0);
+            .draw_mouse_position(&self.scale, &self.font);
         self.mouse.draw_mouse_axis(&self.scale);
 
         for (pix, color) in &self.mouse.position_pixels {

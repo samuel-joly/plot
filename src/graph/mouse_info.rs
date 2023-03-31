@@ -2,7 +2,7 @@ use crate::graph::{coordinate::Coordinate, draw::text::Text};
 use ab_glyph::FontRef;
 use winit::dpi::PhysicalPosition;
 
-use super::{scale::Scale, Graph};
+use super::{scale::Scale, Graph, draw::text::TextCompiler};
 pub struct Mouse {
     pub position: PhysicalPosition<f64>,
     pub axis_pixels: Vec<u32>,
@@ -34,7 +34,7 @@ impl Mouse {
         }
     }
 
-    pub fn draw_mouse_position(&mut self, scale: &Scale, font: &FontRef, font_size: f32) {
+    pub fn draw_mouse_position(&mut self, scale: &Scale, font: &TextCompiler) {
         self.position_pixels = vec![];
         let x = self.position.x as f32 - (scale.width / 2) as f32;
         let y = (scale.height / 2) as f32 - self.position.y as f32;
@@ -64,10 +64,10 @@ impl Mouse {
         let mut mouse_txt_x = Text::from(x_txt, x_coord, Some(true)).unwrap();
         let mut mouse_txt_y = Text::from(y_txt, y_coord, Some(true)).unwrap();
 
-        for (pixel, color) in mouse_txt_x.draw((scale.width, scale.height), font_size, font) {
+        for (pixel, color) in mouse_txt_x.draw((scale.width, scale.height), font) {
             self.position_pixels.push((pixel, color));
         }
-        for (pixel, color) in mouse_txt_y.draw((scale.width, scale.height), font_size, font) {
+        for (pixel, color) in mouse_txt_y.draw((scale.width, scale.height), font) {
             self.position_pixels.push((pixel, color));
         }
     }

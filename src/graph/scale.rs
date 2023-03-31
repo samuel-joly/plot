@@ -1,7 +1,8 @@
-use ab_glyph::FontRef;
 use winit::dpi::PhysicalSize;
 
 use crate::graph::{coordinate::Coordinate, draw::text::Text};
+
+use super::draw::text::TextCompiler;
 
 #[derive(Debug)]
 pub enum Orientation {
@@ -107,16 +108,16 @@ impl Scale {
 
     fn set_scale_factor(&mut self) {
         if self.height % 2 != 0 {
-            self.height += 1;
+            self.height -= 1;
         }
         if self.width % 2 != 0 {
-            self.width += 1;
+            self.width -= 1;
         }
         self.factor_x = self.width as f32 / self.current_interval_x as f32;
         self.factor_y = self.height as f32 / self.current_interval_y as f32;
     }
 
-    pub fn draw(&mut self, foreground_color: u32, font: &FontRef) -> Vec<(u32, u32)> {
+    pub fn draw(&mut self, foreground_color: u32, font: &TextCompiler) -> Vec<(u32, u32)> {
         let mut interval_texts = vec![];
         let width: u32 = self.width;
         let height: u32 = self.height;
@@ -133,10 +134,7 @@ impl Scale {
         }
 
         for i in 1..10 {
-            let mut coord_y = i * ((height as f32 / 10.0) * width as f32).floor() as u32;
-            // Weird equalization of y axis, element shift by an unindentified value each increment
-            coord_y -= coord_y % width;
-            coord_y += width;
+            let mut coord_y = i * ((height / 10) * width) as u32;
             let mut coord_x = (i * (width / 10)) as u32;
 
             match self.position {
@@ -151,35 +149,27 @@ impl Scale {
                 }
             }
 
-            self.draw_interval(coord_x, coord_y, &mut interval_texts, foreground_color);
             if i % 2 == 0 {
                 self.draw_interval_text(coord_x, coord_y, &mut interval_texts, font);
             }
+            //            if i == 5 {continue}
+
+            for _ in 0..9 {
+                interval_texts.push((coord_y - 4, foreground_color));
+                interval_texts.push((coord_x - (4 * self.width), foreground_color));
+                match self.position {
+                    Position::RightBottom => {
+                        coord_y -= 1;
+                        coord_x -= self.width;
+                    }
+                    _ => {
+                        coord_y += 1;
+                        coord_x += self.width;
+                    }
+                };
+            }
         }
         interval_texts
-    }
-
-    pub fn draw_interval(
-        &self,
-        mut index_x: u32,
-        mut index_y: u32,
-        interval_texts: &mut Vec<(u32, u32)>,
-        foreground_color: u32,
-    ) {
-        for _ in 0..9 {
-            interval_texts.push((index_y - 4, foreground_color));
-            interval_texts.push((index_x - (4 * self.width), foreground_color));
-            match self.position {
-                Position::RightBottom => {
-                    index_y -= 1;
-                    index_x -= self.width;
-                }
-                _ => {
-                    index_y += 1;
-                    index_x += self.width;
-                }
-            };
-        }
     }
 
     pub fn draw_interval_text(
@@ -187,7 +177,7 @@ impl Scale {
         coord_x: u32,
         coord_y: u32,
         interval_texts: &mut Vec<(u32, u32)>,
-        font: &FontRef,
+        font: &TextCompiler,
     ) {
         let line_x = Coordinate::from_index((self.width, self.height), coord_x)
             .unwrap()
@@ -196,11 +186,20 @@ impl Scale {
             .unwrap()
             .get_pos();
 
-        let text_x = (f32::trunc((line_x.0 as f32 / self.factor_x) * 100.0) / 100.0).to_string();
-        let text_y = (f32::trunc((-line_y.1 as f32 / self.factor_y) * 100.0) / 100.0).to_string();
+        let text_x = f32::trunc(line_x.0 as f32 / self.factor_x)
+            .floor()
+            .to_string();
+        let text_y = f32::trunc(-line_y.1 as f32 / self.factor_y)
+            .floor()
+            .to_string();
 
         let mut ctx = coord_x - (6 * text_x.len() as u32);
-        let mut cty = coord_y - 3 * self.width + 10;
+        let mut cty:u32 ;
+        if coord_y > self.width {
+            cty = coord_y - self.width + 10;
+        } else {
+            cty = coord_y + 10;
+        }
 
         match self.position {
             Position::RightBottom => {
@@ -218,11 +217,11 @@ impl Scale {
         let coord_text_y = Coordinate::from_index((self.width, self.height), cty).unwrap();
         let mut scale_text_y = Text::from(text_y, coord_text_y, Some(true)).unwrap();
 
-        for index in scale_text_x.draw((self.width, self.height), 17.0, font) {
+        for index in scale_text_x.draw((self.width, self.height), &font) {
             interval_texts.push((index.0, index.1));
             self.mut_pixels.push(index.0);
         }
-        for index in scale_text_y.draw((self.width, self.height), 17.0, font) {
+        for index in scale_text_y.draw((self.width, self.height), &font) {
             interval_texts.push((index.0, index.1));
             self.mut_pixels.push(index.0);
         }

@@ -7,7 +7,7 @@ impl Color {
         if red > 256 || green > 256 || blue > 256 {
             return Err(Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!("red green and blue should be lower or equal than 255"),
+                format!("red green and blue should be lower or equal than 255, {} {} {} given", red, green, blue),
             ));
         }
 
