@@ -2,7 +2,7 @@ use crate::graph::{coordinate::Coordinate, draw::text::Text};
 use ab_glyph::FontRef;
 use winit::dpi::PhysicalPosition;
 
-use super::{scale::Scale, Graph, draw::text::TextCompiler};
+use super::{draw::text::TextCompiler, scale::Scale, Graph};
 pub struct Mouse {
     pub position: PhysicalPosition<f64>,
     pub axis_pixels: Vec<u32>,

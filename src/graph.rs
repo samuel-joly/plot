@@ -56,20 +56,30 @@ impl<'a> Graph<'a> {
         for shape in self.shapes.iter_mut() {
             if shape.is_mut() {
                 for index in shape.get_mut_pixels() {
-                    drop(std::mem::replace(
-                        &mut self.buffer[index as usize],
-                        self.background,
-                    ));
+                    match self.buffer.get(index as usize) {
+                        Some(_) => {
+                            drop(std::mem::replace(
+                                &mut self.buffer[index as usize],
+                                self.background,
+                            ));
+                        }
+                        _ => {}
+                    }
                 }
             }
             if shape.is_scalable() {
                 shape.scale(&self.scale);
             }
             for index in shape.draw((self.scale.width, self.scale.height)) {
-                drop(std::mem::replace(
-                    &mut self.buffer[index.0 as usize],
-                    index.1,
-                ));
+                match self.buffer.get(index.0 as usize) {
+                    Some(_) => {
+                        drop(std::mem::replace(
+                            &mut self.buffer[index.0 as usize],
+                            index.1,
+                        ));
+                    }
+                    _ => {}
+                }
             }
         }
     }
@@ -97,8 +107,7 @@ impl<'a> Graph<'a> {
             ));
         }
 
-        self.mouse
-            .draw_mouse_position(&self.scale, &self.font);
+        self.mouse.draw_mouse_position(&self.scale, &self.font);
         self.mouse.draw_mouse_axis(&self.scale);
 
         for (pix, color) in &self.mouse.position_pixels {

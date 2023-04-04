@@ -17,8 +17,8 @@ fn main() {
     let mut graphic = Graph::new();
     graphic.background = 0x000000;
     graphic.foreground = 0xFFFFFF;
-    graphic.scale.set_scale(1000.0, 400.0);
-    let circle = Circle::from(100, Coordinate::new(), true);
+    graphic.scale.set_scale(1000.0, 1000.0);
+    let circle = Circle::from(300, Coordinate::new(), true);
     graphic.shapes = vec![Box::new(circle)];
 
     event_loop.run(move |event, _, control_flow| {

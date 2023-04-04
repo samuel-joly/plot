@@ -1,6 +1,5 @@
-use crate::graph::{coordinate::Coordinate, scale::Scale};
-
 use super::Drawable;
+use crate::graph::{coordinate::Coordinate, scale::Scale};
 
 /// Colored straight line
 #[derive(Debug)]

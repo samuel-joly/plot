@@ -21,7 +21,8 @@ impl<'a> TextCompiler<'a> {
     }
 
     pub fn compile_text(&mut self) {
-        let str = String::from("1234567890abcdefghijklmnopqrstuvwxyz,-:.ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        let str =
+            String::from("1234567890abcdefghijklmnopqrstuvwxyz,-:.ABCDEFGHIJKLMNOPQRSTUVWXYZ");
         for s in str.chars() {
             let mut ret: Vec<(u32, u32, u32)> = vec![];
             let q_glyph: Glyph = self.font.glyph_id(s).with_scale(self.fontsize);

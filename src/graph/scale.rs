@@ -194,7 +194,7 @@ impl Scale {
             .to_string();
 
         let mut ctx = coord_x - (6 * text_x.len() as u32);
-        let mut cty:u32 ;
+        let mut cty: u32;
         if coord_y > self.width {
             cty = coord_y - self.width + 10;
         } else {

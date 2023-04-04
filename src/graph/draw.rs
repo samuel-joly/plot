@@ -1,5 +1,6 @@
 use super::scale::Scale;
 
+pub mod circle;
 pub mod line;
 pub mod text;
 
